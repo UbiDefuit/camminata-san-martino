@@ -11,7 +11,9 @@ import { isSupabaseConfigured } from './utils/supabase';
 
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin';
 
-const EVENT_DATE = new Date('2026-09-20T09:00:00');
+const EVENT_DATE = new Date('2026-08-01T07:00:00');
+// Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
+const WHATSAPP_LINK = '';
 
 // ---------- UI di base ----------
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
@@ -45,7 +47,7 @@ function Landing({ go }: { go: (v: View) => void }) {
       <div className="text-center pt-8 pb-2">
         <div className="text-5xl mb-3">🥾🌄</div>
         <h1 className="text-3xl font-bold text-pine-100">Camminata sui Sentieri di San Martino</h1>
-        <p className="text-pine-300 mt-2">Vallata di Polinago — domenica 20 settembre 2026, ore 9:00</p>
+        <p className="text-pine-300 mt-2">Chiesa di San Martino, Polinago — sabato 1 agosto 2026, ritrovo ore 6:30</p>
       </div>
 
       <Card>
@@ -64,23 +66,28 @@ function Landing({ go }: { go: (v: View) => void }) {
         <p className="text-pine-300 text-sm leading-relaxed">
           I volontari della nostra associazione hanno ripulito e riaperto i sentieri storici del
           territorio montano di San Martino. Vieni a percorrerli con noi: {(TOTAL_M / 1000).toFixed(1)} km
-          tra boschi e punti panoramici, con riprese drone della giornata e <b>colazione finale</b> offerta
-          a tutti gli iscritti.
+          tra boschi e punti panoramici, con riprese drone della giornata e, al rientro, <b>colazione per tutti</b> a offerta libera.
         </p>
       </Card>
 
       <Card>
         <h2 className="font-bold text-lg text-pine-100 mb-2">📋 Programma</h2>
         <ul className="text-pine-300 text-sm space-y-1">
-          <li>• 8:30 — Ritrovo e check-in alla partenza</li>
-          <li>• 9:00 — Partenza della camminata</li>
+          <li>• 6:30 — Ritrovo e check-in alla Chiesa di San Martino</li>
+          <li>• 7:00 — Partenza della camminata</li>
           <li>• lungo il percorso — punti panoramici e aree ripulite</li>
-          <li>• al ristoro — colazione con il tagliandino digitale</li>
+          <li>• 9:30 — Rientro alla chiesa e colazione per tutti (offerta libera, ritiro con tagliandino)</li>
         </ul>
       </Card>
 
       <Button onClick={() => go('iscrizione')}>Iscriviti ora — è gratis</Button>
       <Button variant="ghost" onClick={() => go('mappa')}>Guarda il percorso</Button>
+      {WHATSAPP_LINK && (
+        <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer"
+          className="block text-center bg-[#25D366] hover:opacity-90 text-white rounded-xl px-5 py-3 font-semibold transition">
+          💬 Unisciti al gruppo WhatsApp
+        </a>
+      )}
     </div>
   );
 }
@@ -176,12 +183,12 @@ function Tagliandino() {
             {p.checked_in ? '✅ Check-in effettuato' : '⬜ Check-in alla partenza'}
           </p>
           <p className={p.voucher_used ? 'text-amber-300' : 'text-pine-500'}>
-            {p.voucher_used ? '🥐 Colazione ritirata' : '⬜ Colazione da ritirare al ristoro'}
+            {p.voucher_used ? '🥐 Colazione ritirata' : '⬜ Colazione da ritirare al rientro'}
           </p>
         </div>
       </Card>
       <p className="text-xs text-pine-400 px-6">
-        Mostra questo QR al volontario alla partenza (check-in) e al punto ristoro (colazione).
+        Mostra questo QR al volontario alla partenza (check-in) e al rientro alla chiesa (colazione).
         Funziona anche offline.
       </p>
     </div>

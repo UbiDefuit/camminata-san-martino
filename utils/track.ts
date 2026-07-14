@@ -13,11 +13,11 @@ export const TRACK: [number, number][] = [
 
 export interface POI { pos: [number, number]; label: string; icon: string; }
 export const POIS: POI[] = [
-  { pos: TRACK[0], label: 'Partenza e check-in', icon: '🚩' },
+  { pos: TRACK[0], label: 'Chiesa di San Martino — ritrovo 6:30 e partenza 7:00', icon: '🚩' },
   { pos: TRACK[6], label: 'Area ripulita dai volontari', icon: '🌲' },
   { pos: TRACK[11], label: 'Punto panoramico', icon: '📷' },
-  { pos: TRACK[17], label: 'Ristoro — colazione', icon: '🥐' },
-  { pos: TRACK[TRACK.length - 1], label: 'Arrivo', icon: '🏁' },
+  
+  { pos: TRACK[TRACK.length - 1], label: 'Rientro alla chiesa — colazione per tutti (offerta libera)', icon: '🥐' },
 ];
 
 const R = 6371000;
