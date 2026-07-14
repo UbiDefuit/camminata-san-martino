@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#0a0a0a"/>
+
+  <!-- sole -->
+  <circle cx="655" cy="325" r="44" fill="none" stroke="#ffffff" stroke-width="7"/>
+
+  <!-- montagne minimal -->
+  <path d="M 220 630 L 400 390 L 500 510 L 590 410 L 760 630 Z"
+        fill="none" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+
+  <!-- sentiero punteggiato -->
+  <path d="M 290 715 C 420 690 380 650 490 628 C 600 606 560 570 645 548"
+        fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-dasharray="2 30"/>
+
+  <!-- intestazione -->
+  <text x="512" y="268" text-anchor="middle" fill="#ffffff" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="42">S A N&#160;&#160;M A R T I N O&#160;&#160;2 . 0</text>
+
+  <!-- barra come nel logo -->
+  <rect x="152" y="742" width="720" height="88" fill="#ffffff"/>
+  <text x="512" y="803" text-anchor="middle" fill="#0a0a0a" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="46" font-weight="bold">I N T O&#160;&#160;T H E&#160;&#160;W I L D</text>
+</svg>
