@@ -35,6 +35,11 @@ const cum: number[] = [0];
 for (let i = 1; i < TRACK.length; i++) cum.push(cum[i - 1] + haversine(TRACK[i - 1], TRACK[i]));
 export const TOTAL_M = cum[cum.length - 1];
 
+// Lunghezza ufficiale del percorso reale (il tracciato qui sopra è ancora
+// dimostrativo: quando arriva il GPX vero, questa costante va rimossa e
+// si torna a usare TOTAL_M).
+export const OFFICIAL_KM = 6.5;
+
 // Proietta la posizione GPS sul tracciato e restituisce l'avanzamento.
 export function progressOnTrack(pos: [number, number]) {
   let best = { dist: Infinity, along: 0 };

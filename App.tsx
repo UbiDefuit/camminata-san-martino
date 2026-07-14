@@ -6,7 +6,7 @@ import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
 } from './utils/store';
-import { TRACK, POIS, TOTAL_M, progressOnTrack } from './utils/track';
+import { TRACK, POIS, TOTAL_M, OFFICIAL_KM, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
 
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin' | 'privacy';
@@ -73,7 +73,7 @@ function Landing({ go }: { go: (v: View) => void }) {
         <Label>Sentieri ritrovati</Label>
         <p className="text-neutral-400 text-sm leading-relaxed font-light">
           I volontari della nostra associazione hanno ripulito e riaperto i sentieri storici del
-          territorio montano di San Martino. Vieni a percorrerli con noi: {(TOTAL_M / 1000).toFixed(1)} km
+          territorio montano di San Martino. Vieni a percorrerli con noi: {OFFICIAL_KM.toLocaleString('it-IT')} km
           tra boschi e punti panoramici, con riprese drone della giornata e, al rientro,{' '}
           <span className="text-white">colazione per tutti</span> a offerta libera.
         </p>
@@ -96,7 +96,7 @@ function Landing({ go }: { go: (v: View) => void }) {
         </ul>
       </Card>
 
-      <Button onClick={() => go('iscrizione')}>Iscriviti — è gratis</Button>
+      <Button onClick={() => go('iscrizione')}>Iscriviti</Button>
       <Button variant="ghost" onClick={() => go('mappa')}>Guarda il percorso</Button>
       {WHATSAPP_LINK && (
         <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer"
@@ -291,7 +291,7 @@ function Mappa() {
         ) : (
           <p className="text-neutral-500 text-sm font-light">
             {gpsErr ? 'GPS non disponibile: ' + gpsErr : 'In attesa della posizione GPS…'}
-            {' '}Percorso totale: {(TOTAL_M / 1000).toFixed(1)} km.
+            {' '}Percorso totale: {OFFICIAL_KM.toLocaleString('it-IT')} km.
           </p>
         )}
       </Card>
