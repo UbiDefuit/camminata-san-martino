@@ -6,7 +6,7 @@ import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
 } from './utils/store';
-import { TRACK, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack } from './utils/track';
+import { TRACK, ELES, DISTS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
 
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin' | 'privacy';
@@ -251,9 +251,47 @@ function Tagliandino() {
 }
 
 // ---------- Mappa ----------
+function AltimetryProfile({ doneM }: { doneM: number | null }) {
+  const W = 600, H = 150, PAD = 8;
+  const minE = Math.min(...ELES), maxE = Math.max(...ELES);
+  const x = (d: number) => PAD + (d / TOTAL_M) * (W - 2 * PAD);
+  const y = (e: number) => H - PAD - ((e - minE) / (maxE - minE)) * (H - 2 * PAD - 18);
+  const line = TRACK.map((_, i) => `${x(DISTS[i]).toFixed(1)},${y(ELES[i]).toFixed(1)}`).join(' ');
+  // posizione live sul profilo
+  let liveX = null as number | null, liveY = null as number | null;
+  if (doneM !== null) {
+    let i = DISTS.findIndex((d) => d >= doneM); if (i < 0) i = DISTS.length - 1;
+    liveX = x(DISTS[i]); liveY = y(ELES[i]);
+  }
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-2">
+      <defs>
+        <linearGradient id="alt" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <polygon points={`${PAD},${H - PAD} ${line} ${W - PAD},${H - PAD}`} fill="url(#alt)" />
+      <polyline points={line} fill="none" stroke="#ffffff" strokeWidth="2" />
+      {liveX !== null && (
+        <>
+          <line x1={liveX} y1={PAD} x2={liveX} y2={H - PAD} stroke="#ffffff" strokeWidth="1" strokeDasharray="3 4" opacity="0.6" />
+          <circle cx={liveX!} cy={liveY!} r="5" fill="#ffffff" stroke="#0a0a0a" strokeWidth="2" />
+        </>
+      )}
+      <text x={PAD} y={12} fill="#737373" fontSize="11">{Math.round(maxE)} m</text>
+      <text x={PAD} y={H - PAD - 4} fill="#737373" fontSize="11">{Math.round(minE)} m</text>
+      <text x={W - PAD} y={12} textAnchor="end" fill="#737373" fontSize="11">+{ELEVATION_GAIN_M} m</text>
+    </svg>
+  );
+}
+
 function Mappa() {
   const mapRef = useRef<L.Map | null>(null);
   const meRef = useRef<L.CircleMarker | null>(null);
+  const flyMarkerRef = useRef<L.CircleMarker | null>(null);
+  const flyTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [flying, setFlying] = useState(false);
   const [prog, setProg] = useState<ReturnType<typeof progressOnTrack> | null>(null);
   const [gpsErr, setGpsErr] = useState('');
 
@@ -285,14 +323,57 @@ function Mappa() {
     );
     return () => {
       if (watch !== undefined) navigator.geolocation.clearWatch(watch);
+      if (flyTimer.current) clearInterval(flyTimer.current);
       map.remove();
     };
   }, []);
 
+  // "Sorvola il percorso": la mappa vola lungo il sentiero
+  const flyover = () => {
+    const map = mapRef.current; if (!map) return;
+    if (flying) {
+      if (flyTimer.current) clearInterval(flyTimer.current);
+      flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
+      setFlying(false);
+      map.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
+      return;
+    }
+    setFlying(true);
+    map.setView(TRACK[0], 16, { animate: true });
+    flyMarkerRef.current = L.circleMarker(TRACK[0], { radius: 8, color: '#0a0a0a', fillColor: '#ffffff', fillOpacity: 1, weight: 3 }).addTo(map);
+    let i = 0;
+    flyTimer.current = setInterval(() => {
+      i += 3;
+      if (i >= TRACK.length) {
+        if (flyTimer.current) clearInterval(flyTimer.current);
+        flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
+        setFlying(false);
+        map.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
+        return;
+      }
+      flyMarkerRef.current?.setLatLng(TRACK[i]);
+      map.panTo(TRACK[i], { animate: true });
+    }, 60);
+  };
+
   return (
     <div className="animate-fade-in-up">
-      <div id="map" className="h-[55vh] overflow-hidden border border-neutral-800 mt-8 grayscale contrast-110" />
-      <Card className="mt-5">
+      <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-8 grayscale contrast-110" />
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <button onClick={flyover}
+          className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition">
+          {flying ? 'Ferma il volo' : 'Sorvola il percorso'}
+        </button>
+        <a href="./percorso.gpx" download="san-martino-into-the-wild.gpx"
+          className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition text-center">
+          Scarica GPX
+        </a>
+      </div>
+      <Card className="mt-4">
+        <Label>Altimetria</Label>
+        <AltimetryProfile doneM={prog ? prog.doneM : null} />
+      </Card>
+      <Card className="mt-4">
         <Label>Il tuo avanzamento</Label>
         {prog ? (
           <>
