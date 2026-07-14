@@ -121,3 +121,38 @@ export function friendlyError(e: any): string {
 // Il "mio" tagliandino su questo telefono
 export const getMyTicketId = () => localStorage.getItem('csm_my_ticket');
 export const setMyTicketId = (id: string) => localStorage.setItem('csm_my_ticket', id);
+
+// ---------- Muro delle foto ----------
+export interface EventPhoto {
+  id: string;
+  path: string;
+  author: string;
+  created_at: string;
+  url: string;
+}
+
+export async function listPhotos(): Promise<EventPhoto[]> {
+  if (!isSupabaseConfigured()) return [];
+  const { data, error } = await supabase!
+    .from('sm2_photos').select('*').order('created_at', { ascending: false }).limit(300);
+  if (error) throw error;
+  return (data || []).map((p: any) => ({
+    ...p,
+    url: supabase!.storage.from('sm2-photos').getPublicUrl(p.path).data.publicUrl,
+  }));
+}
+
+export async function uploadPhoto(blob: Blob, author: string): Promise<void> {
+  if (!isSupabaseConfigured()) throw new Error('Le foto sono disponibili solo nella versione online.');
+  const path = crypto.randomUUID() + '.jpg';
+  const { error: upErr } = await supabase!.storage
+    .from('sm2-photos').upload(path, blob, { contentType: 'image/jpeg' });
+  if (upErr) throw new Error(upErr.message);
+  const { error } = await supabase!.from('sm2_photos').insert({ path, author });
+  if (error) throw new Error(error.message);
+}
+
+export async function hidePhoto(id: string, pin: string): Promise<void> {
+  const { error } = await supabase!.rpc('sm2_hide_photo', { p_id: id, pin });
+  if (error) throw new Error(error.message);
+}

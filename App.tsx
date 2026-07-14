@@ -7,11 +7,12 @@ import { Html5Qrcode } from 'html5-qrcode';
 import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
+  EventPhoto, listPhotos, uploadPhoto, hidePhoto,
 } from './utils/store';
 import { TRACK, ELES, DISTS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
 
-type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin' | 'privacy';
+type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'foto' | 'admin' | 'privacy';
 
 const EVENT_DATE = new Date('2026-08-01T07:00:00');
 // Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
@@ -510,6 +511,94 @@ function Mappa() {
   );
 }
 
+// ---------- Muro delle foto ----------
+async function resizeImage(file: File, maxSide = 1600): Promise<Blob> {
+  const img = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(img.width * scale);
+  canvas.height = Math.round(img.height * scale);
+  canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return new Promise((res) => canvas.toBlob((b) => res(b!), 'image/jpeg', 0.82));
+}
+
+function Foto() {
+  const [photos, setPhotos] = useState<EventPhoto[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState('');
+  const [full, setFull] = useState<EventPhoto | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const staffPin = sessionStorage.getItem('sm2_staff_pin') || '';
+
+  const refresh = () => listPhotos().then(setPhotos).catch(() => {});
+  useEffect(() => {
+    refresh();
+    const t = setInterval(refresh, 15000); // il muro si aggiorna da solo
+    return () => clearInterval(t);
+  }, []);
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBusy(true); setMsg('');
+    try {
+      const blob = await resizeImage(file);
+      const me = getMyTicketId() ? await getParticipant(getMyTicketId()!) : null;
+      await uploadPhoto(blob, me?.name || 'Anonimo');
+      setMsg('Foto pubblicata!');
+      refresh();
+    } catch (err: any) { setMsg(friendlyError(err)); }
+    finally { setBusy(false); if (fileRef.current) fileRef.current.value = ''; }
+  };
+
+  const hide = async (p: EventPhoto) => {
+    if (!window.confirm('Nascondere questa foto?')) return;
+    try { await hidePhoto(p.id, staffPin); setFull(null); refresh(); }
+    catch (e: any) { setMsg(friendlyError(e)); }
+  };
+
+  return (
+    <div className="space-y-4 animate-fade-in-up pt-8">
+      <h1 className="text-2xl font-bold tracking-tight text-white">Il muro delle foto</h1>
+      <p className="text-neutral-500 text-sm font-light">
+        Scatta lungo il sentiero e pubblica: il muro si aggiorna in diretta per tutti.
+      </p>
+      <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
+      <Button onClick={() => fileRef.current?.click()} disabled={busy}>
+        {busy ? 'Caricamento…' : 'Scatta o carica una foto'}
+      </Button>
+      {msg && <p className="text-center text-sm text-neutral-300">{msg}</p>}
+      {photos.length === 0 && (
+        <p className="text-neutral-600 text-sm font-light text-center pt-6">
+          Ancora nessuna foto: sii il primo a pubblicare.
+        </p>
+      )}
+      <div className="grid grid-cols-3 gap-1">
+        {photos.map((p) => (
+          <button key={p.id} onClick={() => setFull(p)} className="aspect-square overflow-hidden bg-neutral-900">
+            <img src={p.url} alt="" loading="lazy" className="w-full h-full object-cover hover:opacity-80 transition" />
+          </button>
+        ))}
+      </div>
+      {full && (
+        <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4"
+          onClick={() => setFull(null)}>
+          <img src={full.url} alt="" className="max-h-[75vh] max-w-full object-contain" />
+          <p className="text-neutral-400 text-sm mt-3 font-light">
+            {full.author || 'Anonimo'} · {new Date(full.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+          </p>
+          {staffPin && (
+            <button onClick={(e) => { e.stopPropagation(); hide(full); }}
+              className="mt-3 text-xs uppercase tracking-[0.2em] text-red-400 border border-red-900 px-4 py-2">
+              Nascondi (staff)
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ---------- Admin (organizzatori) ----------
 function Admin() {
   const [list, setList] = useState<Participant[]>([]);
@@ -675,6 +764,7 @@ export default function App() {
     { v: 'iscrizione', label: 'Iscriviti' },
     { v: 'tagliandino', label: 'Ticket' },
     { v: 'mappa', label: 'Percorso' },
+    { v: 'foto', label: 'Foto' },
     { v: 'admin', label: 'Staff' },
   ];
 
@@ -685,6 +775,7 @@ export default function App() {
         {view === 'iscrizione' && <Iscrizione go={setView} />}
         {view === 'tagliandino' && <Tagliandino />}
         {view === 'mappa' && <Mappa />}
+        {view === 'foto' && <Foto />}
         {view === 'admin' && <Admin />}
         {view === 'privacy' && <Privacy go={setView} />}
       </main>
