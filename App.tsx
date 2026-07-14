@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
 import L from 'leaflet';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
@@ -257,7 +259,6 @@ function AltimetryProfile({ doneM }: { doneM: number | null }) {
   const x = (d: number) => PAD + (d / TOTAL_M) * (W - 2 * PAD);
   const y = (e: number) => H - PAD - ((e - minE) / (maxE - minE)) * (H - 2 * PAD - 18);
   const line = TRACK.map((_, i) => `${x(DISTS[i]).toFixed(1)},${y(ELES[i]).toFixed(1)}`).join(' ');
-  // posizione live sul profilo
   let liveX = null as number | null, liveY = null as number | null;
   if (doneM !== null) {
     let i = DISTS.findIndex((d) => d >= doneM); if (i < 0) i = DISTS.length - 1;
@@ -286,21 +287,63 @@ function AltimetryProfile({ doneM }: { doneM: number | null }) {
   );
 }
 
+const bearingBetween = (a: [number, number], b: [number, number]) => {
+  const p = Math.PI / 180;
+  const y = Math.sin((b[1] - a[1]) * p) * Math.cos(b[0] * p);
+  const x = Math.cos(a[0] * p) * Math.sin(b[0] * p) - Math.sin(a[0] * p) * Math.cos(b[0] * p) * Math.cos((b[1] - a[1]) * p);
+  return (Math.atan2(y, x) * 180) / Math.PI;
+};
+
 function Mappa() {
-  const mapRef = useRef<L.Map | null>(null);
+  const [mode, setMode] = useState<'2d' | '3d'>('2d');
+  const map2dRef = useRef<L.Map | null>(null);
+  const map3dRef = useRef<maplibregl.Map | null>(null);
   const meRef = useRef<L.CircleMarker | null>(null);
+  const me3dRef = useRef<maplibregl.Marker | null>(null);
   const flyMarkerRef = useRef<L.CircleMarker | null>(null);
   const flyTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [flying, setFlying] = useState(false);
   const [prog, setProg] = useState<ReturnType<typeof progressOnTrack> | null>(null);
   const [gpsErr, setGpsErr] = useState('');
 
+  const stopFly = () => {
+    if (flyTimer.current) clearInterval(flyTimer.current);
+    flyTimer.current = null;
+    flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
+    setFlying(false);
+  };
+
+  // GPS condiviso tra le due modalità
   useEffect(() => {
+    const watch = navigator.geolocation?.watchPosition(
+      (loc) => {
+        const pos: [number, number] = [loc.coords.latitude, loc.coords.longitude];
+        setProg(progressOnTrack(pos));
+        setGpsErr('');
+        if (map2dRef.current) {
+          if (!meRef.current) meRef.current = L.circleMarker(pos, { radius: 9, color: '#000', fillColor: '#fff', fillOpacity: 1 }).addTo(map2dRef.current);
+          else meRef.current.setLatLng(pos);
+        }
+        if (map3dRef.current) {
+          if (!me3dRef.current) {
+            const el = document.createElement('div');
+            el.style.cssText = 'width:16px;height:16px;border-radius:50%;background:#fff;border:3px solid #000;';
+            me3dRef.current = new maplibregl.Marker({ element: el }).setLngLat([pos[1], pos[0]]).addTo(map3dRef.current);
+          } else me3dRef.current.setLngLat([pos[1], pos[0]]);
+        }
+      },
+      (err) => setGpsErr(err.message),
+      { enableHighAccuracy: true, maximumAge: 5000 }
+    );
+    return () => { if (watch !== undefined) navigator.geolocation.clearWatch(watch); };
+  }, [mode]);
+
+  // Mappa 2D (Leaflet)
+  useEffect(() => {
+    if (mode !== '2d') return;
     const map = L.map('map', { zoomControl: false }).setView(TRACK[0], 14);
-    mapRef.current = map;
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
-    }).addTo(map);
+    map2dRef.current = map;
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     const line = L.polyline(TRACK, { color: '#ffffff', weight: 4, opacity: 0.9 }).addTo(map);
     POIS.forEach((poi) =>
       L.marker(poi.pos, {
@@ -308,61 +351,117 @@ function Mappa() {
       }).addTo(map).bindPopup(poi.label)
     );
     map.fitBounds(line.getBounds(), { padding: [30, 30] });
+    return () => { stopFly(); meRef.current = null; map2dRef.current = null; map.remove(); };
+  }, [mode]);
 
-    const watch = navigator.geolocation?.watchPosition(
-      (loc) => {
-        const pos: [number, number] = [loc.coords.latitude, loc.coords.longitude];
-        if (!meRef.current) {
-          meRef.current = L.circleMarker(pos, { radius: 9, color: '#000', fillColor: '#fff', fillOpacity: 1 }).addTo(map);
-        } else meRef.current.setLatLng(pos);
-        setProg(progressOnTrack(pos));
-        setGpsErr('');
-      },
-      (err) => setGpsErr(err.message),
-      { enableHighAccuracy: true, maximumAge: 5000 }
-    );
-    return () => {
-      if (watch !== undefined) navigator.geolocation.clearWatch(watch);
-      if (flyTimer.current) clearInterval(flyTimer.current);
-      map.remove();
-    };
-  }, []);
+  // Mappa 3D (MapLibre GL: satellite + terreno DEM)
+  useEffect(() => {
+    if (mode !== '3d') return;
+    const map = new maplibregl.Map({
+      container: 'map3d',
+      style: {
+        version: 8,
+        sources: {
+          sat: {
+            type: 'raster',
+            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+            tileSize: 256,
+            attribution: 'Esri, Maxar, Earthstar Geographics',
+            maxzoom: 18,
+          },
+          dem: {
+            type: 'raster-dem',
+            tiles: ['https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png'],
+            encoding: 'terrarium',
+            tileSize: 256,
+            maxzoom: 14,
+          },
+        },
+        layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
+        terrain: { source: 'dem', exaggeration: 1.4 },
+      } as any,
+      center: [TRACK[0][1], TRACK[0][0]],
+      zoom: 13.8,
+      pitch: 65,
+      bearing: 160,
+      maxPitch: 78,
+      attributionControl: { compact: true } as any,
+    });
+    map.on('load', () => {
+      map.addSource('route', {
+        type: 'geojson',
+        data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: TRACK.map((p) => [p[1], p[0]]) } },
+      });
+      map.addLayer({
+        id: 'route-glow', type: 'line', source: 'route',
+        paint: { 'line-color': '#ffffff', 'line-width': 10, 'line-opacity': 0.25, 'line-blur': 4 },
+      });
+      map.addLayer({
+        id: 'route', type: 'line', source: 'route',
+        paint: { 'line-color': '#ffffff', 'line-width': 3.5 },
+      });
+    });
+    map3dRef.current = map;
+    return () => { stopFly(); me3dRef.current = null; map3dRef.current = null; map.remove(); };
+  }, [mode]);
 
-  // "Sorvola il percorso": la mappa vola lungo il sentiero
+  // Sorvolo: 2D (pan) o 3D (cinematico con rotta)
   const flyover = () => {
-    const map = mapRef.current; if (!map) return;
     if (flying) {
-      if (flyTimer.current) clearInterval(flyTimer.current);
-      flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
-      setFlying(false);
-      map.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
+      stopFly();
+      if (mode === '2d' && map2dRef.current) map2dRef.current.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
       return;
     }
     setFlying(true);
-    map.setView(TRACK[0], 16, { animate: true });
-    flyMarkerRef.current = L.circleMarker(TRACK[0], { radius: 8, color: '#0a0a0a', fillColor: '#ffffff', fillOpacity: 1, weight: 3 }).addTo(map);
-    let i = 0;
-    flyTimer.current = setInterval(() => {
-      i += 3;
-      if (i >= TRACK.length) {
-        if (flyTimer.current) clearInterval(flyTimer.current);
-        flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
-        setFlying(false);
-        map.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
-        return;
-      }
-      flyMarkerRef.current?.setLatLng(TRACK[i]);
-      map.panTo(TRACK[i], { animate: true });
-    }, 60);
+    if (mode === '2d' && map2dRef.current) {
+      const map = map2dRef.current;
+      map.setView(TRACK[0], 16, { animate: true });
+      flyMarkerRef.current = L.circleMarker(TRACK[0], { radius: 8, color: '#0a0a0a', fillColor: '#ffffff', fillOpacity: 1, weight: 3 }).addTo(map);
+      let i = 0;
+      flyTimer.current = setInterval(() => {
+        i += 3;
+        if (i >= TRACK.length) {
+          stopFly(); map.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] }); return;
+        }
+        flyMarkerRef.current?.setLatLng(TRACK[i]);
+        map.panTo(TRACK[i], { animate: true });
+      }, 60);
+    } else if (mode === '3d' && map3dRef.current) {
+      const map = map3dRef.current;
+      let i = 0; let bearing = 160;
+      flyTimer.current = setInterval(() => {
+        i += 2;
+        if (i >= TRACK.length - 10) {
+          stopFly();
+          map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2000 });
+          return;
+        }
+        const target = bearingBetween(TRACK[i], TRACK[Math.min(i + 12, TRACK.length - 1)]);
+        // interpolazione angolare morbida
+        let diff = ((target - bearing + 540) % 360) - 180;
+        bearing += diff * 0.08;
+        map.easeTo({ center: [TRACK[i][1], TRACK[i][0]], zoom: 15.6, pitch: 70, bearing, duration: 90, easing: (t) => t });
+      }, 80);
+    }
   };
+
+  const tabBtn = (active: boolean) =>
+    (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
+    ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
 
   return (
     <div className="animate-fade-in-up">
-      <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-8 grayscale contrast-110" />
+      <div className="flex gap-2 mt-8">
+        <button onClick={() => { stopFly(); setMode('2d'); }} className={tabBtn(mode === '2d')}>Mappa</button>
+        <button onClick={() => { stopFly(); setMode('3d'); }} className={tabBtn(mode === '3d')}>Vista 3D</button>
+      </div>
+      {mode === '2d'
+        ? <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-3 grayscale contrast-110" />
+        : <div id="map3d" className="h-[55vh] overflow-hidden border border-neutral-800 mt-3" />}
       <div className="grid grid-cols-2 gap-3 mt-4">
         <button onClick={flyover}
           className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition">
-          {flying ? 'Ferma il volo' : 'Sorvola il percorso'}
+          {flying ? 'Ferma il volo' : mode === '3d' ? 'Volo cinematico' : 'Sorvola il percorso'}
         </button>
         <a href="./percorso.gpx" download="san-martino-into-the-wild.gpx"
           className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition text-center">
