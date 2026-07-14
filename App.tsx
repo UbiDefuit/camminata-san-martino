@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
   Participant, register, listParticipants, getParticipant,
-  checkIn, redeemVoucher, getMyTicketId, setMyTicketId,
+  checkIn, redeemVoucher, verifyStaffPin, getMyTicketId, setMyTicketId,
 } from './utils/store';
 import { TRACK, POIS, TOTAL_M, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
@@ -286,23 +286,55 @@ function Admin() {
   const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState('');
   const [mode, setMode] = useState<'checkin' | 'colazione'>('checkin');
+  const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
+  const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
+  const [pinErr, setPinErr] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
   const refresh = () => listParticipants().then(setList);
-  useEffect(() => { refresh(); }, []);
+  useEffect(() => { if (authed) refresh(); }, [authed]);
+
+  const login = async () => {
+    setPinErr('');
+    try {
+      if (await verifyStaffPin(pin)) {
+        sessionStorage.setItem('sm2_staff_pin', pin);
+        setAuthed(true);
+      } else setPinErr('PIN non valido.');
+    } catch (e: any) { setPinErr('Errore: ' + (e.message || e)); }
+  };
 
   const onScan = async (id: string) => {
-    const p = await getParticipant(id);
-    if (!p) { setMsg('QR non riconosciuto'); return; }
-    if (mode === 'checkin') {
-      if (p.checked_in) setMsg(p.name + ': check-in già fatto');
-      else { await checkIn(id); setMsg('Check-in: ' + p.name); }
-    } else {
-      if (p.voucher_used) setMsg(p.name + ': colazione GIÀ RITIRATA');
-      else { await redeemVoucher(id); setMsg('Colazione consegnata a ' + p.name); }
+    try {
+      const p = await getParticipant(id);
+      if (!p) { setMsg('QR non riconosciuto'); return; }
+      if (mode === 'checkin') {
+        if (p.checked_in) setMsg(p.name + ': check-in già fatto');
+        else { await checkIn(id, pin); setMsg('Check-in: ' + p.name); }
+      } else {
+        await redeemVoucher(id, pin);
+        setMsg('Colazione consegnata a ' + p.name);
+      }
+    } catch (e: any) {
+      setMsg((e.message || e).includes('già ritirata') ? 'ATTENZIONE: colazione GIÀ RITIRATA' : 'Errore: ' + (e.message || e));
     }
     refresh();
   };
+
+  if (!authed) {
+    return (
+      <div className="space-y-4 animate-fade-in-up pt-8 max-w-xs mx-auto">
+        <h1 className="text-2xl font-bold tracking-tight text-white">Staff</h1>
+        <p className="text-neutral-500 text-sm font-light">Area riservata ai volontari. Inserisci il PIN staff.</p>
+        <input type="password" inputMode="numeric" placeholder="PIN"
+          className="w-full bg-black border border-neutral-800 px-4 py-3.5 text-white text-center tracking-[0.5em] focus:outline-none focus:border-white transition"
+          value={pin} onChange={(e) => setPin(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && login()} />
+        {pinErr && <p className="text-red-400 text-sm text-center">{pinErr}</p>}
+        <Button onClick={login}>Entra</Button>
+      </div>
+    );
+  }
 
   const startScan = async () => {
     setScanning(true); setMsg('');
