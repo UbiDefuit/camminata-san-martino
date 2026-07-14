@@ -432,6 +432,7 @@ function Mappa() {
     } else if (mode === '3d' && map3dRef.current) {
       const map = map3dRef.current;
       let i = 0; let bearing = 160;
+      const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
       flyTimer.current = setInterval(() => {
         i += 2;
         if (i >= TRACK.length - 10) {
@@ -443,7 +444,14 @@ function Mappa() {
         // interpolazione angolare morbida
         let diff = ((target - bearing + 540) % 360) - 180;
         bearing += diff * 0.08;
-        map.easeTo({ center: [TRACK[i][1], TRACK[i][0]], zoom: 15.6, pitch: 70, bearing, duration: 90, easing: (t) => t });
+        // camera consapevole delle quote: si alza se il terreno alle spalle
+        // (dove sta la camera) è più alto, si raddrizza nelle discese ripide
+        const here = ELES[i];
+        const behindMax = Math.max(...ELES.slice(Math.max(0, i - 45), i + 1));
+        const aheadDrop = here - ELES[Math.min(i + 30, ELES.length - 1)];
+        const zoom = 15.5 - clamp((behindMax - here) / 110, 0, 1.6);
+        const pitch = 66 - clamp(aheadDrop / 3.5, 0, 24);
+        map.easeTo({ center: [TRACK[i][1], TRACK[i][0]], zoom, pitch, bearing, duration: 90, easing: (t) => t });
       }, 80);
     }
   };
