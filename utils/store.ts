@@ -84,6 +84,40 @@ async function rpcAction(fn: 'sm2_check_in' | 'sm2_redeem', id: string, pin: str
 export const checkIn = (id: string, pin: string) => rpcAction('sm2_check_in', id, pin);
 export const redeemVoucher = (id: string, pin: string) => rpcAction('sm2_redeem', id, pin);
 
+// Recupero tagliandino: dato il contatto usato all'iscrizione, ritrova il QR
+export async function findTicket(contact: string): Promise<Participant | null> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await supabase!.rpc('sm2_find_ticket', { p_contact: contact });
+    if (error) throw new Error(error.message);
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as Participant) || null;
+  }
+  return lsRead().find((p) => p.contact.trim().toLowerCase() === contact.trim().toLowerCase()) || null;
+}
+
+// Staff: annulla un'iscrizione errata (con PIN)
+export async function cancelParticipant(id: string, pin: string): Promise<boolean> {
+  if (isSupabaseConfigured()) {
+    const { data, error } = await supabase!.rpc('sm2_cancel', { p_id: id, pin });
+    if (error) throw new Error(error.message);
+    return data === true;
+  }
+  const list = lsRead();
+  lsWrite(list.filter((p) => p.id !== id));
+  return true;
+}
+
+// Messaggi comprensibili per gli errori del database
+export function friendlyError(e: any): string {
+  const m = String(e?.message || e);
+  if (m.includes('duplicate key') || m.includes('sm2_participants_contact_unique'))
+    return 'Questo contatto è già iscritto. Vai su "Ticket" e usa "Recupera tagliandino".';
+  if (m.includes('Posti esauriti')) return 'Posti esauriti: le iscrizioni sono al completo.';
+  if (m.includes('Iscrizioni chiuse')) return 'Le iscrizioni sono chiuse.';
+  if (m.includes('Troppi tentativi')) return 'Troppi tentativi: riprova tra 15 minuti.';
+  return m;
+}
+
 // Il "mio" tagliandino su questo telefono
 export const getMyTicketId = () => localStorage.getItem('csm_my_ticket');
 export const setMyTicketId = (id: string) => localStorage.setItem('csm_my_ticket', id);

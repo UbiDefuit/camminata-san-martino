@@ -3,13 +3,13 @@ import QRCode from 'qrcode';
 import L from 'leaflet';
 import { Html5Qrcode } from 'html5-qrcode';
 import {
-  Participant, register, listParticipants, getParticipant,
-  checkIn, redeemVoucher, verifyStaffPin, getMyTicketId, setMyTicketId,
+  Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
+  verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
 } from './utils/store';
 import { TRACK, POIS, TOTAL_M, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
 
-type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin';
+type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin' | 'privacy';
 
 const EVENT_DATE = new Date('2026-08-01T07:00:00');
 // Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
@@ -125,7 +125,7 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
       setMyTicketId(p.id);
       go('tagliandino');
     } catch (e: any) {
-      setError('Errore durante l\'iscrizione: ' + (e.message || e));
+      setError(friendlyError(e));
     } finally { setBusy(false); }
   };
 
@@ -158,7 +158,7 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
       <label className="flex items-start gap-3 text-sm text-neutral-400 font-light">
         <input type="checkbox" className="mt-1 accent-white" checked={form.consent}
           onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
-        <span>Accetto l'informativa privacy e autorizzo le riprese foto/video (drone incluso) della giornata.</span>
+        <span>Accetto l'<button type="button" className="underline text-white" onClick={() => go('privacy')}>informativa privacy</button> e autorizzo le riprese foto/video (drone incluso) della giornata.</span>
       </label>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <Button onClick={submit} disabled={busy}>{busy ? 'Invio…' : 'Conferma iscrizione'}</Button>
@@ -180,10 +180,29 @@ function Tagliandino() {
     });
   }, []);
 
+  const [recContact, setRecContact] = useState('');
+  const [recMsg, setRecMsg] = useState('');
+  const recover = async () => {
+    setRecMsg('');
+    try {
+      const found = await findTicket(recContact);
+      if (!found) { setRecMsg('Nessuna iscrizione trovata con questo contatto.'); return; }
+      setMyTicketId(found.id);
+      setP(found);
+      QRCode.toDataURL(found.id, { width: 280, margin: 1 }).then(setQr);
+    } catch (e: any) { setRecMsg(friendlyError(e)); }
+  };
+
   if (!p) return (
-    <div className="pt-16 text-center text-neutral-400 animate-fade-in-up font-light">
+    <div className="pt-12 text-center text-neutral-400 animate-fade-in-up font-light space-y-4 max-w-xs mx-auto">
       <p>Nessun tagliandino su questo dispositivo.</p>
-      <p className="text-sm mt-2 text-neutral-600">Iscriviti per ricevere il tuo QR code personale.</p>
+      <p className="text-sm text-neutral-600">Iscriviti, oppure recupera il tuo tagliandino con il contatto usato all'iscrizione.</p>
+      <input className="w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-600 focus:outline-none focus:border-white transition text-sm"
+        placeholder="Email o telefono dell'iscrizione" value={recContact}
+        onChange={(e) => setRecContact(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && recover()} />
+      {recMsg && <p className="text-sm text-red-400">{recMsg}</p>}
+      <Button onClick={recover}>Recupera tagliandino</Button>
     </div>
   );
 
@@ -354,6 +373,13 @@ function Admin() {
     setScanning(false);
   };
 
+  const cancel = async (p: Participant) => {
+    if (!window.confirm('Annullare l\'iscrizione di ' + p.name + '?')) return;
+    try { await cancelParticipant(p.id, pin); setMsg('Iscrizione annullata: ' + p.name); }
+    catch (e: any) { setMsg(friendlyError(e)); }
+    refresh();
+  };
+
   const totAdulti = list.reduce((s, p) => s + p.adults, 0);
   const totBimbi = list.reduce((s, p) => s + p.children, 0);
   const tabBtn = (active: boolean) =>
@@ -388,19 +414,44 @@ function Admin() {
         {list.length === 0 && <p className="text-neutral-600 text-sm font-light">Nessuna iscrizione ancora.</p>}
         <ul className="divide-y divide-neutral-800 text-sm">
           {list.map((p) => (
-            <li key={p.id} className="py-3 flex justify-between items-center">
-              <div>
-                <div className="text-white">{p.name}</div>
-                <div className="text-neutral-500 text-xs font-light">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
+            <li key={p.id} className="py-3 flex justify-between items-center gap-3">
+              <div className="min-w-0">
+                <div className="text-white truncate">{p.name}</div>
+                <div className="text-neutral-500 text-xs font-light truncate">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
               </div>
-              <div className="text-right text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                <div className={p.checked_in ? 'text-white' : ''}>{p.checked_in ? '● in' : '○ in'}</div>
-                <div className={p.voucher_used ? 'text-white' : ''}>{p.voucher_used ? '● col' : '○ col'}</div>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="text-right text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                  <div className={p.checked_in ? 'text-white' : ''}>{p.checked_in ? '● in' : '○ in'}</div>
+                  <div className={p.voucher_used ? 'text-white' : ''}>{p.voucher_used ? '● col' : '○ col'}</div>
+                </div>
+                <button onClick={() => cancel(p)} title="Annulla iscrizione"
+                  className="text-neutral-600 hover:text-red-400 border border-neutral-800 px-2 py-1 text-xs transition">✕</button>
               </div>
             </li>
           ))}
         </ul>
       </Card>
+    </div>
+  );
+}
+
+// ---------- Privacy ----------
+function Privacy({ go }: { go: (v: View) => void }) {
+  return (
+    <div className="space-y-5 animate-fade-in-up pt-8 text-sm font-light text-neutral-300 leading-relaxed">
+      <h1 className="text-2xl font-bold tracking-tight text-white">Informativa privacy</h1>
+      <p className="text-neutral-500 text-xs uppercase tracking-[0.2em]">Ai sensi del Reg. UE 2016/679 (GDPR)</p>
+      <Card><Label>Titolare del trattamento</Label>
+        <p>APS San Martino 2.0 — The Valley, Vallata di Polinago (MO). Per esercitare i tuoi diritti contatta l'associazione tramite i canali dell'evento.</p></Card>
+      <Card><Label>Dati raccolti e finalità</Label>
+        <p>Nome, contatto (email o telefono), numero di partecipanti ed eventuali note alimentari, raccolti al solo fine di gestire l'iscrizione all'evento "San Martino 2.0 — Into the Wild" del 1° agosto 2026, il check-in e la distribuzione della colazione.</p></Card>
+      <Card><Label>Riprese foto e video</Label>
+        <p>Durante l'evento verranno effettuate riprese foto/video, anche con drone, per la documentazione e la promozione delle attività dell'associazione. Con l'iscrizione autorizzi l'uso di tali riprese; puoi revocare il consenso in qualsiasi momento contattando l'associazione.</p></Card>
+      <Card><Label>Posizione GPS</Label>
+        <p>La posizione GPS mostrata sulla mappa del percorso è elaborata esclusivamente sul tuo dispositivo e non viene mai inviata ai nostri server.</p></Card>
+      <Card><Label>Conservazione e cancellazione</Label>
+        <p>I dati sono conservati su infrastruttura Supabase (UE, Francoforte) e verranno cancellati entro 30 giorni dalla conclusione dell'evento. Puoi chiederne la cancellazione anticipata in qualsiasi momento.</p></Card>
+      <Button variant="ghost" onClick={() => go('iscrizione')}>Torna all'iscrizione</Button>
     </div>
   );
 }
@@ -424,6 +475,7 @@ export default function App() {
         {view === 'tagliandino' && <Tagliandino />}
         {view === 'mappa' && <Mappa />}
         {view === 'admin' && <Admin />}
+        {view === 'privacy' && <Privacy go={setView} />}
       </main>
       <nav className="fixed bottom-0 inset-x-0 bg-black/95 backdrop-blur border-t border-neutral-800">
         <div className="max-w-lg mx-auto flex">
