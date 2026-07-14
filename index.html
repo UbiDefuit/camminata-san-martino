@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#1f3929" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Camminata San Martino" />
+  <title>Camminata sui Sentieri di San Martino</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" href="./icon.svg" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+<body class="bg-pine-950 text-white">
+  <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('./service-worker.js').catch(function (e) {
+          console.warn('SW registration failed', e);
+        });
+      });
+    }
+  </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>
