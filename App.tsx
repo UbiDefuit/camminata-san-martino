@@ -107,6 +107,31 @@ function Landing({ go }: { go: (v: View) => void }) {
         </ul>
       </Card>
 
+      <Card>
+        <Label>Equipaggiamento</Label>
+        <ul className="text-sm space-y-2 font-light text-neutral-300">
+          <li>— Scarpe da trekking o comunque adatte a sentieri sterrati</li>
+          <li>— Borraccia con acqua (lungo il percorso non ci sono fontane)</li>
+          <li>— Abbigliamento a strati e giacca antipioggia</li>
+          <li>— Cappellino e protezione solare</li>
+          <li>— Bastoncini da trekking facoltativi ma consigliati (+422 m di dislivello)</li>
+        </ul>
+      </Card>
+
+      <Card>
+        <Label>Regole e responsabilità</Label>
+        <ul className="text-sm space-y-2 font-light text-neutral-300">
+          <li>— La camminata è un'attività libera e non competitiva: ognuno partecipa a proprio rischio e deve valutare la propria condizione fisica</li>
+          <li>— L'associazione declina ogni responsabilità per danni a persone o cose prima, durante e dopo l'evento</li>
+          <li>— I minori devono essere accompagnati da un adulto responsabile</li>
+          <li>— Cani ammessi solo al guinzaglio</li>
+          <li>— Restare sul sentiero segnalato e seguire le indicazioni dei volontari</li>
+          <li>— Non abbandonare rifiuti: riportiamo a valle ciò che portiamo su</li>
+          <li>— In caso di maltempo l'evento può essere rinviato: aggiornamenti sul gruppo WhatsApp</li>
+          <li>— Emergenze: 112</li>
+        </ul>
+      </Card>
+
       <Button onClick={() => go('iscrizione')}>Iscriviti</Button>
       <Button variant="ghost" onClick={() => go('mappa')}>Guarda il percorso</Button>
       {WHATSAPP_LINK && (
@@ -134,12 +159,13 @@ function Landing({ go }: { go: (v: View) => void }) {
 // ---------- Iscrizione ----------
 function Iscrizione({ go }: { go: (v: View) => void }) {
   const [form, setForm] = useState({ name: '', contact: '', adults: 1, children: 0, notes: '', consent: false });
+  const [liability, setLiability] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const submit = async () => {
-    if (!form.name.trim() || !form.contact.trim() || !form.consent) {
-      setError('Compila nome, contatto e accetta l\'informativa.');
+    if (!form.name.trim() || !form.contact.trim() || !form.consent || !liability) {
+      setError('Compila nome e contatto e accetta entrambe le dichiarazioni.');
       return;
     }
     setBusy(true); setError('');
@@ -182,6 +208,11 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
         <input type="checkbox" className="mt-1 accent-white" checked={form.consent}
           onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
         <span>Accetto l'<button type="button" className="underline text-white" onClick={() => go('privacy')}>informativa privacy</button> e autorizzo le riprese foto/video (drone incluso) della giornata.</span>
+      </label>
+      <label className="flex items-start gap-3 text-sm text-neutral-400 font-light">
+        <input type="checkbox" className="mt-1 accent-white" checked={liability}
+          onChange={(e) => setLiability(e.target.checked)} />
+        <span>Dichiaro di partecipare a mio rischio, di essere in condizione fisica idonea e di sollevare l'associazione da ogni responsabilità per danni a persone o cose. Mi impegno a munirmi dell'equipaggiamento adeguato indicato nella pagina dell'evento.</span>
       </label>
       {error && <p className="text-red-400 text-sm">{error}</p>}
       <Button onClick={submit} disabled={busy}>{busy ? 'Invio…' : 'Conferma iscrizione'}</Button>
