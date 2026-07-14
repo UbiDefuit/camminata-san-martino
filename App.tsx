@@ -378,7 +378,6 @@ function Mappa() {
           },
         },
         layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
-        terrain: { source: 'dem', exaggeration: 1.4 },
       } as any,
       center: [TRACK[0][1], TRACK[0][0]],
       zoom: 13.8,
@@ -388,7 +387,9 @@ function Mappa() {
       canvasContextAttributes: { preserveDrawingBuffer: true } as any,
       attributionControl: { compact: true } as any,
     });
+    map.on('error', (e: any) => console.error('[map3d]', e?.error?.message || e));
     map.on('load', () => {
+      map.setTerrain({ source: 'dem', exaggeration: 1.4 } as any);
       map.addSource('route', {
         type: 'geojson',
         data: { type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: TRACK.map((p) => [p[1], p[0]]) } },
