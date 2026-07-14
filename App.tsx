@@ -38,10 +38,18 @@ function Button({ children, onClick, disabled = false, variant = 'primary' }: {
   );
 }
 
+const SITE_URL = 'https://ubidefuit.github.io/camminata-san-martino/';
+
 // ---------- Landing ----------
 function Landing({ go }: { go: (v: View) => void }) {
   const [now, setNow] = useState(Date.now());
+  const [siteQr, setSiteQr] = useState('');
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(t); }, []);
+  useEffect(() => { QRCode.toDataURL(SITE_URL, { width: 240, margin: 1 }).then(setSiteQr); }, []);
+  const share = () => {
+    if (navigator.share) navigator.share({ title: 'San Martino 2.0 — Into the Wild', url: SITE_URL });
+    else navigator.clipboard?.writeText(SITE_URL);
+  };
   const diff = Math.max(0, EVENT_DATE.getTime() - now);
   const d = Math.floor(diff / 86400000), h = Math.floor(diff / 3600000) % 24,
     m = Math.floor(diff / 60000) % 60, s = Math.floor(diff / 1000) % 60;
@@ -104,6 +112,18 @@ function Landing({ go }: { go: (v: View) => void }) {
           Gruppo WhatsApp
         </a>
       )}
+
+      <Card className="text-center">
+        <Label>Passaparola</Label>
+        {siteQr && <img src={siteQr} alt="QR del sito" className="mx-auto bg-white p-2 w-40" />}
+        <p className="text-neutral-500 text-xs font-light mt-3">
+          Fai inquadrare questo QR per far conoscere l'evento.
+        </p>
+        <button onClick={share}
+          className="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-400 hover:text-white underline underline-offset-4 transition">
+          Condividi il link
+        </button>
+      </Card>
     </div>
   );
 }
