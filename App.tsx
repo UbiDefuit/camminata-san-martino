@@ -13,7 +13,7 @@ type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'admin' | 'privacy
 
 const EVENT_DATE = new Date('2026-08-01T07:00:00');
 // Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
-const WHATSAPP_LINK = '';
+const WHATSAPP_LINK = 'https://chat.whatsapp.com/Irv0U5KNHroKef4iLJtWua';
 
 // ---------- UI di base (tema dark minimal) ----------
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
