@@ -385,6 +385,7 @@ function Mappa() {
       pitch: 65,
       bearing: 160,
       maxPitch: 78,
+      canvasContextAttributes: { preserveDrawingBuffer: true } as any,
       attributionControl: { compact: true } as any,
     });
     map.on('load', () => {
