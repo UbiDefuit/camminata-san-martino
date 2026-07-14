@@ -1,14 +1,19 @@
 {
-  "name": "Camminata sui Sentieri di San Martino",
-  "short_name": "Camminata SM",
-  "description": "Promozione, adesioni e tracciamento GPS della camminata sui sentieri di San Martino - Vallata di Polinago.",
+  "name": "San Martino 2.0 — Into the Wild (First Edition)",
+  "short_name": "SM 2.0",
+  "description": "San Martino 2.0 Into the Wild — camminata sui sentieri della vallata di Polinago: adesioni, tagliandino colazione e percorso GPS.",
   "start_url": "/?source=pwa",
   "id": "/",
   "display": "standalone",
-  "background_color": "#101f16",
-  "theme_color": "#1f3929",
+  "background_color": "#000000",
+  "theme_color": "#000000",
   "orientation": "portrait",
   "icons": [
-    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "./logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }

@@ -15,20 +15,24 @@ const EVENT_DATE = new Date('2026-08-01T07:00:00');
 // Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
 const WHATSAPP_LINK = '';
 
-// ---------- UI di base ----------
+// ---------- UI di base (tema dark minimal) ----------
 function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return <div className={'bg-pine-900/70 border border-pine-700/50 rounded-2xl p-5 ' + className}>{children}</div>;
+  return <div className={'bg-neutral-950 border border-neutral-800 rounded-none p-6 ' + className}>{children}</div>;
+}
+
+function Label({ children }: { children: React.ReactNode }) {
+  return <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">{children}</div>;
 }
 
 function Button({ children, onClick, disabled = false, variant = 'primary' }: {
   children: React.ReactNode; onClick?: () => void; disabled?: boolean; variant?: 'primary' | 'ghost';
 }) {
   const cls = variant === 'primary'
-    ? 'bg-pine-500 hover:bg-pine-400 text-white'
-    : 'bg-transparent border border-pine-500 text-pine-200 hover:bg-pine-800';
+    ? 'bg-white text-black hover:bg-neutral-200'
+    : 'bg-transparent border border-neutral-700 text-white hover:border-white';
   return (
     <button onClick={onClick} disabled={disabled}
-      className={cls + ' rounded-xl px-5 py-3 font-semibold transition disabled:opacity-40 w-full'}>
+      className={cls + ' px-5 py-3.5 font-semibold uppercase tracking-[0.15em] text-sm transition disabled:opacity-40 w-full'}>
       {children}
     </button>
   );
@@ -43,49 +47,61 @@ function Landing({ go }: { go: (v: View) => void }) {
     m = Math.floor(diff / 60000) % 60, s = Math.floor(diff / 1000) % 60;
 
   return (
-    <div className="space-y-5 animate-fade-in-up">
-      <div className="text-center pt-8 pb-2">
-        <div className="text-5xl mb-3">🥾🌄</div>
-        <h1 className="text-3xl font-bold text-pine-100">Camminata sui Sentieri di San Martino</h1>
-        <p className="text-pine-300 mt-2">Chiesa di San Martino, Polinago — sabato 1 agosto 2026, ritrovo ore 6:30</p>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="text-center pt-10 pb-2">
+        <img src="./logo.svg" alt="San Martino 2.0 — The Valley" className="w-44 h-44 mx-auto mb-8 border border-neutral-800" />
+        <div className="text-[11px] uppercase tracking-[0.35em] text-neutral-500 mb-3">First Edition</div>
+        <h1 className="text-4xl font-bold tracking-tight text-white leading-tight">San Martino 2.0</h1>
+        <p className="text-2xl font-light tracking-[0.2em] uppercase text-neutral-300 mt-1">Into the Wild</p>
+        <p className="text-neutral-500 mt-5 text-sm tracking-wide">
+          Chiesa di San Martino, Polinago<br />Sabato 1 agosto 2026 — ritrovo ore 6:30
+        </p>
       </div>
 
       <Card>
         <div className="grid grid-cols-4 text-center gap-2">
           {[[d, 'giorni'], [h, 'ore'], [m, 'min'], [s, 'sec']].map(([v, l]) => (
             <div key={l as string}>
-              <div className="text-3xl font-bold text-pine-200">{v}</div>
-              <div className="text-xs text-pine-400 uppercase">{l}</div>
+              <div className="text-3xl font-light text-white tabular-nums">{String(v).padStart(2, '0')}</div>
+              <div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">{l}</div>
             </div>
           ))}
         </div>
       </Card>
 
       <Card>
-        <h2 className="font-bold text-lg text-pine-100 mb-2">🌲 Sentieri ritrovati</h2>
-        <p className="text-pine-300 text-sm leading-relaxed">
+        <Label>Sentieri ritrovati</Label>
+        <p className="text-neutral-400 text-sm leading-relaxed font-light">
           I volontari della nostra associazione hanno ripulito e riaperto i sentieri storici del
           territorio montano di San Martino. Vieni a percorrerli con noi: {(TOTAL_M / 1000).toFixed(1)} km
-          tra boschi e punti panoramici, con riprese drone della giornata e, al rientro, <b>colazione per tutti</b> a offerta libera.
+          tra boschi e punti panoramici, con riprese drone della giornata e, al rientro,{' '}
+          <span className="text-white">colazione per tutti</span> a offerta libera.
         </p>
       </Card>
 
       <Card>
-        <h2 className="font-bold text-lg text-pine-100 mb-2">📋 Programma</h2>
-        <ul className="text-pine-300 text-sm space-y-1">
-          <li>• 6:30 — Ritrovo e check-in alla Chiesa di San Martino</li>
-          <li>• 7:00 — Partenza della camminata</li>
-          <li>• lungo il percorso — punti panoramici e aree ripulite</li>
-          <li>• 9:30 — Rientro alla chiesa e colazione per tutti (offerta libera, ritiro con tagliandino)</li>
+        <Label>Programma</Label>
+        <ul className="text-sm space-y-3 font-light">
+          {[
+            ['6:30', 'Ritrovo e check-in alla Chiesa di San Martino'],
+            ['7:00', 'Partenza della camminata'],
+            ['—', 'Punti panoramici e aree ripulite lungo il percorso'],
+            ['9:30', 'Rientro alla chiesa, colazione per tutti (offerta libera, ritiro con tagliandino)'],
+          ].map(([t, txt]) => (
+            <li key={txt} className="flex gap-4">
+              <span className="text-neutral-500 w-10 shrink-0 tabular-nums">{t}</span>
+              <span className="text-neutral-300">{txt}</span>
+            </li>
+          ))}
         </ul>
       </Card>
 
-      <Button onClick={() => go('iscrizione')}>Iscriviti ora — è gratis</Button>
+      <Button onClick={() => go('iscrizione')}>Iscriviti — è gratis</Button>
       <Button variant="ghost" onClick={() => go('mappa')}>Guarda il percorso</Button>
       {WHATSAPP_LINK && (
         <a href={WHATSAPP_LINK} target="_blank" rel="noreferrer"
-          className="block text-center bg-[#25D366] hover:opacity-90 text-white rounded-xl px-5 py-3 font-semibold transition">
-          💬 Unisciti al gruppo WhatsApp
+          className="block text-center border border-neutral-700 text-white hover:border-white px-5 py-3.5 font-semibold uppercase tracking-[0.15em] text-sm transition">
+          Gruppo WhatsApp
         </a>
       )}
     </div>
@@ -113,14 +129,14 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
     } finally { setBusy(false); }
   };
 
-  const input = 'w-full bg-pine-950 border border-pine-700 rounded-xl px-4 py-3 text-white placeholder-pine-500 focus:outline-none focus:border-pine-400';
+  const input = 'w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-600 focus:outline-none focus:border-white transition text-sm';
 
   return (
-    <div className="space-y-4 animate-fade-in-up">
-      <h1 className="text-2xl font-bold text-pine-100 pt-4">Iscrizione</h1>
+    <div className="space-y-4 animate-fade-in-up pt-8">
+      <h1 className="text-2xl font-bold tracking-tight text-white">Iscrizione</h1>
       {!isSupabaseConfigured() && (
-        <p className="text-amber-300/90 text-xs bg-amber-900/30 border border-amber-700/40 rounded-xl p-3">
-          Modalità demo: i dati restano solo su questo dispositivo. Collega Supabase per le iscrizioni reali.
+        <p className="text-neutral-400 text-xs border border-neutral-800 p-3 font-light">
+          Modalità demo: i dati restano solo su questo dispositivo.
         </p>
       )}
       <input className={input} placeholder="Nome e cognome" value={form.name}
@@ -128,19 +144,19 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
       <input className={input} placeholder="Email o telefono" value={form.contact}
         onChange={(e) => setForm({ ...form, contact: e.target.value })} />
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-sm text-pine-300">Adulti
-          <input type="number" min={1} className={input + ' mt-1'} value={form.adults}
+        <label className="text-xs uppercase tracking-[0.15em] text-neutral-500">Adulti
+          <input type="number" min={1} className={input + ' mt-2'} value={form.adults}
             onChange={(e) => setForm({ ...form, adults: +e.target.value })} />
         </label>
-        <label className="text-sm text-pine-300">Bambini
-          <input type="number" min={0} className={input + ' mt-1'} value={form.children}
+        <label className="text-xs uppercase tracking-[0.15em] text-neutral-500">Bambini
+          <input type="number" min={0} className={input + ' mt-2'} value={form.children}
             onChange={(e) => setForm({ ...form, children: +e.target.value })} />
         </label>
       </div>
       <input className={input} placeholder="Intolleranze o note per la colazione (facoltativo)" value={form.notes}
         onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-      <label className="flex items-start gap-3 text-sm text-pine-300">
-        <input type="checkbox" className="mt-1 accent-pine-400" checked={form.consent}
+      <label className="flex items-start gap-3 text-sm text-neutral-400 font-light">
+        <input type="checkbox" className="mt-1 accent-white" checked={form.consent}
           onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
         <span>Accetto l'informativa privacy e autorizzo le riprese foto/video (drone incluso) della giornata.</span>
       </label>
@@ -165,29 +181,29 @@ function Tagliandino() {
   }, []);
 
   if (!p) return (
-    <div className="pt-10 text-center text-pine-300 animate-fade-in-up">
+    <div className="pt-16 text-center text-neutral-400 animate-fade-in-up font-light">
       <p>Nessun tagliandino su questo dispositivo.</p>
-      <p className="text-sm mt-2">Iscriviti per ricevere il tuo QR code personale.</p>
+      <p className="text-sm mt-2 text-neutral-600">Iscriviti per ricevere il tuo QR code personale.</p>
     </div>
   );
 
   return (
-    <div className="space-y-4 animate-fade-in-up text-center pt-4">
-      <h1 className="text-2xl font-bold text-pine-100">Il tuo tagliandino</h1>
+    <div className="space-y-5 animate-fade-in-up text-center pt-8">
+      <h1 className="text-2xl font-bold tracking-tight text-white">Il tuo tagliandino</h1>
       <Card className="mx-auto max-w-xs">
-        {qr && <img src={qr} alt="QR tagliandino" className="mx-auto rounded-xl bg-white p-2" />}
-        <p className="mt-3 font-semibold text-pine-100">{p.name}</p>
-        <p className="text-sm text-pine-300">{p.adults} adulti · {p.children} bambini</p>
-        <div className="mt-3 text-sm space-y-1">
-          <p className={p.checked_in ? 'text-pine-300' : 'text-pine-500'}>
-            {p.checked_in ? '✅ Check-in effettuato' : '⬜ Check-in alla partenza'}
+        {qr && <img src={qr} alt="QR tagliandino" className="mx-auto bg-white p-2" />}
+        <p className="mt-4 font-semibold text-white">{p.name}</p>
+        <p className="text-sm text-neutral-500 font-light">{p.adults} adulti · {p.children} bambini</p>
+        <div className="mt-4 text-xs uppercase tracking-[0.15em] space-y-2">
+          <p className={p.checked_in ? 'text-white' : 'text-neutral-600'}>
+            {p.checked_in ? '● Check-in effettuato' : '○ Check-in alla partenza'}
           </p>
-          <p className={p.voucher_used ? 'text-amber-300' : 'text-pine-500'}>
-            {p.voucher_used ? '🥐 Colazione ritirata' : '⬜ Colazione da ritirare al rientro'}
+          <p className={p.voucher_used ? 'text-white' : 'text-neutral-600'}>
+            {p.voucher_used ? '● Colazione ritirata' : '○ Colazione da ritirare al rientro'}
           </p>
         </div>
       </Card>
-      <p className="text-xs text-pine-400 px-6">
+      <p className="text-xs text-neutral-600 px-6 font-light">
         Mostra questo QR al volontario alla partenza (check-in) e al rientro alla chiesa (colazione).
         Funziona anche offline.
       </p>
@@ -208,7 +224,7 @@ function Mappa() {
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap',
     }).addTo(map);
-    const line = L.polyline(TRACK, { color: '#68a27a', weight: 5, opacity: 0.9 }).addTo(map);
+    const line = L.polyline(TRACK, { color: '#ffffff', weight: 4, opacity: 0.9 }).addTo(map);
     POIS.forEach((poi) =>
       L.marker(poi.pos, {
         icon: L.divIcon({ html: '<div style="font-size:22px">' + poi.icon + '</div>', className: '', iconSize: [24, 24] }),
@@ -220,7 +236,7 @@ function Mappa() {
       (loc) => {
         const pos: [number, number] = [loc.coords.latitude, loc.coords.longitude];
         if (!meRef.current) {
-          meRef.current = L.circleMarker(pos, { radius: 9, color: '#fff', fillColor: '#3b82f6', fillOpacity: 1 }).addTo(map);
+          meRef.current = L.circleMarker(pos, { radius: 9, color: '#000', fillColor: '#fff', fillOpacity: 1 }).addTo(map);
         } else meRef.current.setLatLng(pos);
         setProg(progressOnTrack(pos));
         setGpsErr('');
@@ -236,25 +252,25 @@ function Mappa() {
 
   return (
     <div className="animate-fade-in-up">
-      <div id="map" className="h-[55vh] rounded-2xl overflow-hidden border border-pine-700/50 mt-4" />
-      <Card className="mt-4">
-        <h2 className="font-bold text-pine-100 mb-2">Il tuo avanzamento</h2>
+      <div id="map" className="h-[55vh] overflow-hidden border border-neutral-800 mt-8 grayscale contrast-110" />
+      <Card className="mt-5">
+        <Label>Il tuo avanzamento</Label>
         {prog ? (
           <>
-            <div className="h-3 bg-pine-950 rounded-full overflow-hidden">
-              <div className="h-full bg-pine-400 transition-all" style={{ width: prog.pct + '%' }} />
+            <div className="h-1 bg-neutral-800 overflow-hidden">
+              <div className="h-full bg-white transition-all" style={{ width: prog.pct + '%' }} />
             </div>
-            <div className="flex justify-between text-sm text-pine-300 mt-2">
+            <div className="flex justify-between text-sm text-neutral-400 mt-3 font-light">
               <span>{(prog.doneM / 1000).toFixed(1)} km fatti</span>
-              <span className="font-bold text-pine-100">{prog.pct}%</span>
+              <span className="font-semibold text-white">{prog.pct}%</span>
               <span>{(prog.remainingM / 1000).toFixed(1)} km rimasti</span>
             </div>
             {prog.offTrackM > 150 && (
-              <p className="text-amber-300 text-sm mt-2">⚠️ Sei a {Math.round(prog.offTrackM)} m dal sentiero.</p>
+              <p className="text-red-400 text-sm mt-3">Attenzione: sei a {Math.round(prog.offTrackM)} m dal sentiero.</p>
             )}
           </>
         ) : (
-          <p className="text-pine-400 text-sm">
+          <p className="text-neutral-500 text-sm font-light">
             {gpsErr ? 'GPS non disponibile: ' + gpsErr : 'In attesa della posizione GPS…'}
             {' '}Percorso totale: {(TOTAL_M / 1000).toFixed(1)} km.
           </p>
@@ -277,13 +293,13 @@ function Admin() {
 
   const onScan = async (id: string) => {
     const p = await getParticipant(id);
-    if (!p) { setMsg('❌ QR non riconosciuto'); return; }
+    if (!p) { setMsg('QR non riconosciuto'); return; }
     if (mode === 'checkin') {
-      if (p.checked_in) setMsg('⚠️ ' + p.name + ': check-in già fatto');
-      else { await checkIn(id); setMsg('✅ Check-in: ' + p.name); }
+      if (p.checked_in) setMsg(p.name + ': check-in già fatto');
+      else { await checkIn(id); setMsg('Check-in: ' + p.name); }
     } else {
-      if (p.voucher_used) setMsg('⚠️ ' + p.name + ': colazione GIÀ RITIRATA');
-      else { await redeemVoucher(id); setMsg('🥐 Colazione consegnata a ' + p.name); }
+      if (p.voucher_used) setMsg(p.name + ': colazione GIÀ RITIRATA');
+      else { await redeemVoucher(id); setMsg('Colazione consegnata a ' + p.name); }
     }
     refresh();
   };
@@ -308,48 +324,46 @@ function Admin() {
 
   const totAdulti = list.reduce((s, p) => s + p.adults, 0);
   const totBimbi = list.reduce((s, p) => s + p.children, 0);
+  const tabBtn = (active: boolean) =>
+    (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
+    ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
 
   return (
-    <div className="space-y-4 animate-fade-in-up pt-4">
-      <h1 className="text-2xl font-bold text-pine-100">Organizzatori</h1>
+    <div className="space-y-5 animate-fade-in-up pt-8">
+      <h1 className="text-2xl font-bold tracking-tight text-white">Staff</h1>
       <Card>
         <div className="grid grid-cols-3 text-center">
-          <div><div className="text-2xl font-bold text-pine-200">{list.length}</div><div className="text-xs text-pine-400">iscrizioni</div></div>
-          <div><div className="text-2xl font-bold text-pine-200">{totAdulti + totBimbi}</div><div className="text-xs text-pine-400">partecipanti</div></div>
-          <div><div className="text-2xl font-bold text-pine-200">{list.filter((p) => p.voucher_used).length}</div><div className="text-xs text-pine-400">colazioni</div></div>
+          <div><div className="text-2xl font-light text-white">{list.length}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">iscrizioni</div></div>
+          <div><div className="text-2xl font-light text-white">{totAdulti + totBimbi}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">partecipanti</div></div>
+          <div><div className="text-2xl font-light text-white">{list.filter((p) => p.voucher_used).length}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">colazioni</div></div>
         </div>
       </Card>
 
       <Card>
-        <div className="flex gap-2 mb-3">
-          <button onClick={() => setMode('checkin')}
-            className={(mode === 'checkin' ? 'bg-pine-500 text-white' : 'bg-pine-950 text-pine-300') + ' flex-1 rounded-xl py-2 text-sm font-semibold'}>
-            Check-in partenza
-          </button>
-          <button onClick={() => setMode('colazione')}
-            className={(mode === 'colazione' ? 'bg-pine-500 text-white' : 'bg-pine-950 text-pine-300') + ' flex-1 rounded-xl py-2 text-sm font-semibold'}>
-            Riscatto colazione
-          </button>
+        <div className="flex gap-2 mb-4">
+          <button onClick={() => setMode('checkin')} className={tabBtn(mode === 'checkin')}>Check-in</button>
+          <button onClick={() => setMode('colazione')} className={tabBtn(mode === 'colazione')}>Colazione</button>
         </div>
-        <div id="scanner" className="rounded-xl overflow-hidden" />
-        {msg && <p className="text-center text-pine-100 font-semibold my-2">{msg}</p>}
+        <div id="scanner" className="overflow-hidden" />
+        {msg && <p className="text-center text-white font-semibold my-3 text-sm">{msg}</p>}
         <Button onClick={scanning ? stopScan : startScan}>
           {scanning ? 'Ferma scansione' : 'Scansiona QR'}
         </Button>
       </Card>
 
       <Card>
-        <h2 className="font-bold text-pine-100 mb-2">Iscritti</h2>
-        {list.length === 0 && <p className="text-pine-400 text-sm">Nessuna iscrizione ancora.</p>}
-        <ul className="divide-y divide-pine-800 text-sm">
+        <Label>Iscritti</Label>
+        {list.length === 0 && <p className="text-neutral-600 text-sm font-light">Nessuna iscrizione ancora.</p>}
+        <ul className="divide-y divide-neutral-800 text-sm">
           {list.map((p) => (
-            <li key={p.id} className="py-2 flex justify-between items-center">
+            <li key={p.id} className="py-3 flex justify-between items-center">
               <div>
-                <div className="text-pine-100">{p.name}</div>
-                <div className="text-pine-400 text-xs">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
+                <div className="text-white">{p.name}</div>
+                <div className="text-neutral-500 text-xs font-light">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
               </div>
-              <div className="text-right text-xs">
-                <span>{p.checked_in ? '✅' : '⬜'}</span> <span>{p.voucher_used ? '🥐' : '⬜'}</span>
+              <div className="text-right text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+                <div className={p.checked_in ? 'text-white' : ''}>{p.checked_in ? '● in' : '○ in'}</div>
+                <div className={p.voucher_used ? 'text-white' : ''}>{p.voucher_used ? '● col' : '○ col'}</div>
               </div>
             </li>
           ))}
@@ -362,30 +376,30 @@ function Admin() {
 // ---------- App ----------
 export default function App() {
   const [view, setView] = useState<View>('home');
-  const nav: { v: View; icon: string; label: string }[] = [
-    { v: 'home', icon: '🏠', label: 'Evento' },
-    { v: 'iscrizione', icon: '✍️', label: 'Iscriviti' },
-    { v: 'tagliandino', icon: '🎟️', label: 'Tagliandino' },
-    { v: 'mappa', icon: '🗺️', label: 'Percorso' },
-    { v: 'admin', icon: '🛠️', label: 'Staff' },
+  const nav: { v: View; label: string }[] = [
+    { v: 'home', label: 'Evento' },
+    { v: 'iscrizione', label: 'Iscriviti' },
+    { v: 'tagliandino', label: 'Ticket' },
+    { v: 'mappa', label: 'Percorso' },
+    { v: 'admin', label: 'Staff' },
   ];
 
   return (
-    <div className="min-h-screen bg-pine-950 text-white font-sans">
-      <main className="max-w-lg mx-auto px-4 pb-28">
+    <div className="min-h-screen bg-black text-white font-sans">
+      <main className="max-w-lg mx-auto px-5 pb-28">
         {view === 'home' && <Landing go={setView} />}
         {view === 'iscrizione' && <Iscrizione go={setView} />}
         {view === 'tagliandino' && <Tagliandino />}
         {view === 'mappa' && <Mappa />}
         {view === 'admin' && <Admin />}
       </main>
-      <nav className="fixed bottom-0 inset-x-0 bg-pine-900/90 backdrop-blur border-t border-pine-700/50">
+      <nav className="fixed bottom-0 inset-x-0 bg-black/95 backdrop-blur border-t border-neutral-800">
         <div className="max-w-lg mx-auto flex">
           {nav.map((n) => (
             <button key={n.v} onClick={() => setView(n.v)}
-              className={'flex-1 py-3 text-center ' + (view === n.v ? 'text-pine-200' : 'text-pine-500')}>
-              <div className="text-xl">{n.icon}</div>
-              <div className="text-[10px] font-semibold">{n.label}</div>
+              className={'flex-1 py-4 text-center text-[10px] font-semibold uppercase tracking-[0.2em] transition ' +
+                (view === n.v ? 'text-white border-t-2 border-white -mt-px' : 'text-neutral-600')}>
+              {n.label}
             </button>
           ))}
         </div>
