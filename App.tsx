@@ -389,7 +389,7 @@ function Mappa() {
     });
     map.on('error', (e: any) => { console.error('[map3d]', e?.error?.message || e); (window as any).__map3dErr = ((window as any).__map3dErr || []).concat(String(e?.error?.message || e)); });
     (window as any).__map3d = map;
-    map.on('load', () => {
+    map.on('style.load', () => {
       map.setTerrain({ source: 'dem', exaggeration: 1.4 } as any);
       map.addSource('route', {
         type: 'geojson',
