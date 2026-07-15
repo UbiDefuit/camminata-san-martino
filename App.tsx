@@ -455,7 +455,10 @@ function Mappa() {
             maxzoom: 14,
           },
         },
-        layers: [{ id: 'sat', type: 'raster', source: 'sat' }],
+        layers: [
+          { id: 'bg', type: 'background', paint: { 'background-color': '#181a17' } },
+          { id: 'sat', type: 'raster', source: 'sat' },
+        ],
       } as any,
       center: [TRACK[0][1], TRACK[0][0]],
       zoom: 13.8,
@@ -509,7 +512,13 @@ function Mappa() {
         map.panTo(TRACK[i], { animate: true });
       }, 60);
     } else if (mode === '3d' && map3dRef.current) {
-      // 1) Street View reale della canonica → dissolvenza → volo
+      // pre-carica le tile della zona di decollo dietro la foto
+      try {
+        map3dRef.current.jumpTo(map3dRef.current.calculateCameraOptionsFromTo(
+          { lng: TRACK[0][1], lat: TRACK[0][0] }, Math.max(...ELES.slice(0, 15)) + 220,
+          { lng: TRACK[14][1], lat: TRACK[14][0] }, ELES[14]));
+      } catch { /* ignora */ }
+      // 1) foto della canonica → dissolvenza → volo
       setSvMounted(true);
       svTimers.current.push(window.setTimeout(() => setSvOpaque(true), 60));
       svTimers.current.push(window.setTimeout(() => setSvOpaque(false), 4200));
@@ -628,7 +637,7 @@ function Mappa() {
         <div className={'fixed inset-0 z-50 bg-black transition-opacity duration-1000 ' + (svOpaque ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
           <img src="./canonica.jpg" alt="Chiesa di San Martino"
             className="w-full h-full object-cover kenburns" />
-          <div className="absolute top-5 inset-x-0 text-center pointer-events-none">
+          <div className="absolute bottom-10 inset-x-0 text-center pointer-events-none px-14">
             <span className="bg-black/70 text-white text-[11px] uppercase tracking-[0.25em] px-4 py-2">
               Chiesa di San Martino — partenza e arrivo
             </span>
