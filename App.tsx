@@ -348,7 +348,7 @@ const bearingBetween = (a: [number, number], b: [number, number]) => {
 };
 
 function Mappa() {
-  const [mode, setMode] = useState<'2d' | '3d'>('2d');
+  const [mode, setMode] = useState<'2d' | '3d'>('3d');
   const map2dRef = useRef<L.Map | null>(null);
   const map3dRef = useRef<maplibregl.Map | null>(null);
   const meRef = useRef<L.CircleMarker | null>(null);
