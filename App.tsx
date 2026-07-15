@@ -348,7 +348,7 @@ const bearingBetween = (a: [number, number], b: [number, number]) => {
 };
 
 function Mappa() {
-  const [mode, setMode] = useState<'2d' | '3d'>('3d');
+  const [mode, setMode] = useState<'2d' | '3d'>('2d');
   const map2dRef = useRef<L.Map | null>(null);
   const map3dRef = useRef<maplibregl.Map | null>(null);
   const meRef = useRef<L.CircleMarker | null>(null);
@@ -886,6 +886,24 @@ function Admin() {
     setScanning(false);
   };
 
+  const [query, setQuery] = useState('');
+
+  // Piano B: check-in e colazione MANUALI dalla lista (per chi arriva senza QR)
+  const manual = async (what: 'in' | 'col', p: Participant) => {
+    const domanda = what === 'in'
+      ? 'Registrare il check-in di ' + p.name + ' (' + p.adults + 'A · ' + p.children + 'B)?'
+      : 'Consegnare la colazione a ' + p.name + ' (' + p.adults + 'A · ' + p.children + 'B)?';
+    if (!window.confirm(domanda)) return;
+    try {
+      if (what === 'in') await checkIn(p.id, pin);
+      else await redeemVoucher(p.id, pin);
+      setMsg((what === 'in' ? 'Check-in manuale: ' : 'Colazione consegnata (manuale) a ') + p.name);
+    } catch (e: any) {
+      setMsg((e.message || String(e)).includes('già ritirata') ? 'ATTENZIONE: colazione GIÀ RITIRATA' : friendlyError(e));
+    }
+    refresh();
+  };
+
   const cancel = async (p: Participant) => {
     if (!window.confirm('Annullare l\'iscrizione di ' + p.name + '?')) return;
     try { await cancelParticipant(p.id, pin); setMsg('Iscrizione annullata: ' + p.name); }
@@ -954,18 +972,26 @@ function Admin() {
           </button>
         </div>
         {list.length === 0 && <p className="text-neutral-600 text-sm font-light">Nessuna iscrizione ancora.</p>}
+        {list.length > 0 && (
+          <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca nome o contatto…"
+            className="w-full bg-black border border-neutral-800 px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white transition mb-2" />
+        )}
         <ul className="divide-y divide-neutral-800 text-sm">
-          {list.map((p) => (
+          {list.filter((p) => (p.name + ' ' + p.contact).toLowerCase().includes(query.toLowerCase())).map((p) => (
             <li key={p.id} className="py-3 flex justify-between items-center gap-3">
               <div className="min-w-0">
                 <div className="text-white truncate">{p.name}</div>
                 <div className="text-neutral-500 text-xs font-light truncate">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
               </div>
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="text-right text-[10px] uppercase tracking-[0.15em] text-neutral-500">
-                  <div className={p.checked_in ? 'text-white' : ''}>{p.checked_in ? '● in' : '○ in'}</div>
-                  <div className={p.voucher_used ? 'text-white' : ''}>{p.voucher_used ? '● col' : '○ col'}</div>
-                </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <button onClick={() => manual('in', p)} disabled={p.checked_in} title="Check-in manuale"
+                  className={(p.checked_in ? 'text-white border-neutral-800' : 'text-neutral-400 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
+                  {p.checked_in ? '● in' : 'in'}
+                </button>
+                <button onClick={() => manual('col', p)} disabled={p.voucher_used} title="Colazione manuale"
+                  className={(p.voucher_used ? 'text-white border-neutral-800' : 'text-neutral-400 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
+                  {p.voucher_used ? '● col' : 'col'}
+                </button>
                 <button onClick={() => cancel(p)} title="Annulla iscrizione"
                   className="text-neutral-600 hover:text-red-400 border border-neutral-800 px-2 py-1 text-xs transition">✕</button>
               </div>
