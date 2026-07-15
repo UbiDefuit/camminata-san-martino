@@ -56,7 +56,7 @@ function IscrizioniInfo() {
         ? 'Iscrizioni chiuse'
         : left === 0
           ? 'Posti esauriti'
-          : <>Iscrizioni entro le 6:00 di sabato 1 agosto · <span className="text-white">{left}</span> posti disponibili</>}
+          : <>Iscrizioni entro le 20:00 di giovedì 30 luglio · <span className="text-white">{left}</span> posti disponibili</>}
     </p>
   );
 }
