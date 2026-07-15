@@ -360,8 +360,7 @@ function Mappa() {
   const [gpsErr, setGpsErr] = useState('');
 
   // Street View reale della canonica (embed senza chiave) per intro/outro del volo
-  // Foto della Chiesa Parrocchiale di San Martino Vescovo (visualizzatore ufficiale Google Maps)
-  const SV_URL = 'https://www.google.com/maps/embed?pb=!4v1752600000000!6m8!1m7!1sCIHM0ogKEICAgIDnw5CkSA!2m2!1d44.3871844!2d10.6893262!3f0!4f0!5f0.7820865974627469';
+  // Foto della canonica (scatto dell'associazione) per intro/outro del volo
   const [svMounted, setSvMounted] = useState(false);
   const [svOpaque, setSvOpaque] = useState(false);
   const svTimers = useRef<number[]>([]);
@@ -613,7 +612,8 @@ function Mappa() {
         : <div id="map3d" className="h-[55vh] overflow-hidden border border-neutral-800 mt-3" />}
       {svMounted && (
         <div className={'fixed inset-0 z-50 bg-black transition-opacity duration-1000 ' + (svOpaque ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
-          <iframe title="Street View — Chiesa di San Martino" src={SV_URL} className="w-full h-full border-0" />
+          <img src="./canonica.jpg" alt="Chiesa di San Martino"
+            className="w-full h-full object-cover kenburns" />
           <div className="absolute top-5 inset-x-0 text-center pointer-events-none">
             <span className="bg-black/70 text-white text-[11px] uppercase tracking-[0.25em] px-4 py-2">
               Chiesa di San Martino — partenza e arrivo

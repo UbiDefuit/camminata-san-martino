@@ -4,3 +4,10 @@
 
 html, body { height: 100%; }
 .leaflet-container { background: #101f16; }
+
+/* Intro cinematografica: lento zoom sulla foto della canonica */
+@keyframes kenburns {
+  0% { transform: scale(1); }
+  100% { transform: scale(1.12); }
+}
+.kenburns { animation: kenburns 9s ease-out forwards; }
