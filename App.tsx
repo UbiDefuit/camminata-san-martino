@@ -484,28 +484,41 @@ function Mappa() {
       }, 60);
     } else if (mode === '3d' && map3dRef.current) {
       const map = map3dRef.current;
-      let i = 0; let bearing = 160;
-      const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v));
+      const len = TRACK.length;
+      let i = 0;
+      // Volo "drone": camera pilotata direttamente (FreeCameraOptions),
+      // sempre sopra il crinale più alto della zona inquadrata: non può
+      // entrare nel terreno. Durata ~18s.
+      let smPos: [number, number] | null = null;
+      let smLook: [number, number] | null = null;
+      let smAlt: number | null = null;
+      const avgPoint = (idx: number, r: number): [number, number] => {
+        const a = Math.max(0, idx - r), b = Math.min(len - 1, idx + r);
+        let la = 0, lo = 0, n = 0;
+        for (let k = a; k <= b; k++) { la += TRACK[k][0]; lo += TRACK[k][1]; n++; }
+        return [la / n, lo / n];
+      };
       flyTimer.current = setInterval(() => {
-        i += 2;
-        if (i >= TRACK.length - 10) {
+        i += 4;
+        if (i >= len - 6) {
           stopFly();
-          map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2000 });
+          map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2500 });
           return;
         }
-        const target = bearingBetween(TRACK[i], TRACK[Math.min(i + 12, TRACK.length - 1)]);
-        // interpolazione angolare morbida
-        let diff = ((target - bearing + 540) % 360) - 180;
-        bearing += diff * 0.08;
-        // camera consapevole delle quote: si alza se il terreno alle spalle
-        // (dove sta la camera) è più alto, si raddrizza nelle discese ripide
-        const here = ELES[i];
-        const behindMax = Math.max(...ELES.slice(Math.max(0, i - 45), i + 1));
-        const aheadDrop = here - ELES[Math.min(i + 30, ELES.length - 1)];
-        const zoom = 15.5 - clamp((behindMax - here) / 110, 0, 1.6);
-        const pitch = 66 - clamp(aheadDrop / 3.5, 0, 24);
-        map.easeTo({ center: [TRACK[i][1], TRACK[i][0]], zoom, pitch, bearing, duration: 90, easing: (t) => t });
-      }, 80);
+        const camIdx = Math.max(0, i - 22);
+        const pos = avgPoint(camIdx, 10);
+        const look = avgPoint(Math.min(i + 14, len - 1), 6);
+        // quota: il punto più alto tra camera e punto inquadrato, più margine
+        const alt = Math.max(...ELES.slice(camIdx, Math.min(i + 14, len))) + 240;
+        // smoothing per un movimento fluido
+        smPos = smPos ? [smPos[0] + (pos[0] - smPos[0]) * 0.15, smPos[1] + (pos[1] - smPos[1]) * 0.15] : pos;
+        smLook = smLook ? [smLook[0] + (look[0] - smLook[0]) * 0.2, smLook[1] + (look[1] - smLook[1]) * 0.2] : look;
+        smAlt = smAlt !== null ? smAlt + (alt - smAlt) * 0.1 : alt;
+        const cam = map.getFreeCameraOptions();
+        cam.position = maplibregl.MercatorCoordinate.fromLngLat({ lng: smPos[1], lat: smPos[0] }, smAlt);
+        cam.lookAtPoint({ lng: smLook[1], lat: smLook[0] });
+        map.setFreeCameraOptions(cam);
+      }, 70);
     }
   };
 
