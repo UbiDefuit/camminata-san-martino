@@ -7,7 +7,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
-  EventPhoto, listPhotos, uploadPhoto, hidePhoto,
+  EventPhoto, listPhotos, uploadPhoto, hidePhoto, PublicStats, publicStats,
 } from './utils/store';
 import { TRACK, ELES, DISTS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
@@ -42,6 +42,24 @@ function Button({ children, onClick, disabled = false, variant = 'primary' }: {
 }
 
 const SITE_URL = 'https://ubidefuit.github.io/camminata-san-martino/';
+
+// Informativa iscrizioni: scadenza e posti rimasti
+function IscrizioniInfo() {
+  const [stats, setStats] = useState<PublicStats | null>(null);
+  useEffect(() => { publicStats().then(setStats); }, []);
+  if (!stats) return null;
+  const left = Math.max(0, stats.cap - stats.taken);
+  const closed = stats.deadline && new Date() > new Date(stats.deadline);
+  return (
+    <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-500">
+      {closed
+        ? 'Iscrizioni chiuse'
+        : left === 0
+          ? 'Posti esauriti'
+          : <>Iscrizioni entro le 6:00 di sabato 1 agosto · <span className="text-white">{left}</span> posti disponibili</>}
+    </p>
+  );
+}
 
 // ---------- Landing ----------
 function Landing({ go }: { go: (v: View) => void }) {
@@ -79,6 +97,8 @@ function Landing({ go }: { go: (v: View) => void }) {
           ))}
         </div>
       </Card>
+
+      <IscrizioniInfo />
 
       <Card>
         <Label>Sentieri ritrovati</Label>
@@ -183,6 +203,7 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
   return (
     <div className="space-y-4 animate-fade-in-up pt-8">
       <h1 className="text-2xl font-bold tracking-tight text-white">Iscrizione</h1>
+      <IscrizioniInfo />
       {!isSupabaseConfigured() && (
         <p className="text-neutral-400 text-xs border border-neutral-800 p-3 font-light">
           Modalità demo: i dati restano solo su questo dispositivo.

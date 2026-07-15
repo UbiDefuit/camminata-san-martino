@@ -122,6 +122,15 @@ export function friendlyError(e: any): string {
   return m;
 }
 
+// Statistiche pubbliche (nessun dato personale): posti e scadenza iscrizioni
+export interface PublicStats { taken: number; cap: number; deadline: string; }
+export async function publicStats(): Promise<PublicStats | null> {
+  if (!isSupabaseConfigured()) return null;
+  const { data, error } = await supabase!.rpc('sm2_public_stats');
+  if (error) return null;
+  return data as PublicStats;
+}
+
 // Il "mio" tagliandino su questo telefono
 export const getMyTicketId = () => localStorage.getItem('csm_my_ticket');
 export const setMyTicketId = (id: string) => localStorage.setItem('csm_my_ticket', id);
