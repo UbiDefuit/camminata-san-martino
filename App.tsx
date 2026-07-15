@@ -359,6 +359,17 @@ function Mappa() {
   const [prog, setProg] = useState<ReturnType<typeof progressOnTrack> | null>(null);
   const [gpsErr, setGpsErr] = useState('');
 
+  // Street View reale della canonica (embed senza chiave) per intro/outro del volo
+  const SV_URL = 'https://maps.google.com/maps?layer=c&cbll=44.38735,10.68935&cbp=11,205,0,0,0&source=embed&output=svembed';
+  const [svMounted, setSvMounted] = useState(false);
+  const [svOpaque, setSvOpaque] = useState(false);
+  const svTimers = useRef<number[]>([]);
+  const svClear = () => { svTimers.current.forEach((t) => clearTimeout(t)); svTimers.current = []; };
+  const svHideNow = () => {
+    svClear(); setSvOpaque(false);
+    svTimers.current.push(window.setTimeout(() => setSvMounted(false), 1100));
+  };
+
   const stopFly = () => {
     if (flyTimer.current) clearInterval(flyTimer.current);
     flyTimer.current = null;
@@ -465,6 +476,7 @@ function Mappa() {
   const flyover = () => {
     if (flying) {
       stopFly();
+      svHideNow();
       if (mode === '2d' && map2dRef.current) map2dRef.current.fitBounds(L.latLngBounds(TRACK), { padding: [30, 30] });
       return;
     }
@@ -483,7 +495,17 @@ function Mappa() {
         map.panTo(TRACK[i], { animate: true });
       }, 60);
     } else if (mode === '3d' && map3dRef.current) {
-      const map = map3dRef.current;
+      // 1) Street View reale della canonica → dissolvenza → volo
+      setSvMounted(true);
+      svTimers.current.push(window.setTimeout(() => setSvOpaque(true), 60));
+      svTimers.current.push(window.setTimeout(() => setSvOpaque(false), 4200));
+      svTimers.current.push(window.setTimeout(() => { setSvMounted(false); start3dFlight(); }, 5300));
+    }
+  };
+
+  const start3dFlight = () => {
+    {
+      const map = map3dRef.current!;
       const len = TRACK.length;
       const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
       const avgPoint = (idx: number, r: number): [number, number] => {
@@ -557,6 +579,9 @@ function Mappa() {
               map.jumpTo(map.calculateCameraOptionsFromTo(
                 { lng: groundCam[1], lat: groundCam[0] }, groundAlt,
                 { lng: TRACK[0][1], lat: TRACK[0][0] }, ELES[0] + 6));
+              // outro: si riapre la Street View della canonica
+              setSvMounted(true);
+              svTimers.current.push(window.setTimeout(() => setSvOpaque(true), 60));
               stopFly();
               return;
             }
@@ -579,12 +604,24 @@ function Mappa() {
   return (
     <div className="animate-fade-in-up">
       <div className="flex gap-2 mt-8">
-        <button onClick={() => { stopFly(); setMode('2d'); }} className={tabBtn(mode === '2d')}>Mappa</button>
-        <button onClick={() => { stopFly(); setMode('3d'); }} className={tabBtn(mode === '3d')}>Vista 3D</button>
+        <button onClick={() => { stopFly(); svHideNow(); setMode('2d'); }} className={tabBtn(mode === '2d')}>Mappa</button>
+        <button onClick={() => { stopFly(); svHideNow(); setMode('3d'); }} className={tabBtn(mode === '3d')}>Vista 3D</button>
       </div>
       {mode === '2d'
         ? <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-3 grayscale contrast-110" />
         : <div id="map3d" className="h-[55vh] overflow-hidden border border-neutral-800 mt-3" />}
+      {svMounted && (
+        <div className={'fixed inset-0 z-50 bg-black transition-opacity duration-1000 ' + (svOpaque ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
+          <iframe title="Street View — Chiesa di San Martino" src={SV_URL} className="w-full h-full border-0" />
+          <div className="absolute top-5 inset-x-0 text-center pointer-events-none">
+            <span className="bg-black/70 text-white text-[11px] uppercase tracking-[0.25em] px-4 py-2">
+              Chiesa di San Martino — partenza e arrivo
+            </span>
+          </div>
+          <button onClick={svHideNow}
+            className="absolute top-4 right-4 bg-black/70 border border-neutral-700 text-white w-9 h-9 text-lg">✕</button>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3 mt-4">
         <button onClick={flyover}
           className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition">
