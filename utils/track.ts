@@ -1062,6 +1062,31 @@ for (let i = 1; i < TRACK.length; i++) cum.push(cum[i - 1] + haversine(TRACK[i -
 export const DISTS = cum;
 export const TOTAL_M = cum[cum.length - 1];
 
+// Dislivello positivo cumulativo lungo il tracciato (soglia 0,5 m anti-rumore)
+const gains: number[] = [0];
+for (let i = 1; i < ELES.length; i++) {
+  const d = ELES[i] - ELES[i - 1];
+  gains.push(gains[i - 1] + (d > 0.5 ? d : 0));
+}
+export const GAINS = gains;
+
+// Indice del tracciato a una certa distanza percorsa
+export function idxAtDistance(m: number): number {
+  let lo = 0, hi = DISTS.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (DISTS[mid] < m) lo = mid + 1; else hi = mid;
+  }
+  return lo;
+}
+
+// Pendenza (%) attorno a un punto del tracciato
+export function slopeAt(idx: number): number {
+  const a = Math.max(0, idx - 4), b = Math.min(TRACK.length - 1, idx + 4);
+  const dd = DISTS[b] - DISTS[a];
+  return dd > 0 ? ((ELES[b] - ELES[a]) / dd) * 100 : 0;
+}
+
 // Proietta la posizione GPS sul tracciato e restituisce l'avanzamento.
 export function progressOnTrack(pos: [number, number]) {
   let best = { dist: Infinity, along: 0 };

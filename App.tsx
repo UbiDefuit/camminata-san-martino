@@ -9,7 +9,7 @@ import {
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
   EventPhoto, listPhotos, uploadPhoto, hidePhoto, PublicStats, publicStats,
 } from './utils/store';
-import { TRACK, ELES, DISTS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack } from './utils/track';
+import { TRACK, ELES, DISTS, GAINS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack, idxAtDistance, slopeAt } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
 
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'foto' | 'admin' | 'privacy';
@@ -358,6 +358,8 @@ function Mappa() {
   const [flying, setFlying] = useState(false);
   const [prog, setProg] = useState<ReturnType<typeof progressOnTrack> | null>(null);
   const [gpsErr, setGpsErr] = useState('');
+  const fixesRef = useRef<{ t: number; d: number }[]>([]);
+  const [speedMs, setSpeedMs] = useState<number | null>(null); // m/s media mobile
 
   // Street View reale della canonica (embed senza chiave) per intro/outro del volo
   // Foto della canonica (scatto dell'associazione) per intro/outro del volo
@@ -382,8 +384,20 @@ function Mappa() {
     const watch = navigator.geolocation?.watchPosition(
       (loc) => {
         const pos: [number, number] = [loc.coords.latitude, loc.coords.longitude];
-        setProg(progressOnTrack(pos));
+        const p = progressOnTrack(pos);
+        setProg(p);
         setGpsErr('');
+        // telemetria: media mobile della velocità lungo il sentiero (finestra ~3 min)
+        if (p.offTrackM <= 250) {
+          const now = Date.now();
+          const fixes = fixesRef.current.filter((f) => now - f.t < 180000);
+          fixes.push({ t: now, d: p.doneM });
+          fixesRef.current = fixes;
+          if (fixes.length >= 3 && now - fixes[0].t > 30000) {
+            const v = (fixes[fixes.length - 1].d - fixes[0].d) / ((now - fixes[0].t) / 1000);
+            setSpeedMs(v > 0.1 ? v : 0);
+          }
+        }
         if (map2dRef.current) {
           if (!meRef.current) meRef.current = L.circleMarker(pos, { radius: 9, color: '#000', fillColor: '#fff', fillOpacity: 1 }).addTo(map2dRef.current);
           else meRef.current.setLatLng(pos);
@@ -667,6 +681,36 @@ function Mappa() {
           </p>
         )}
       </Card>
+      {prog && prog.offTrackM <= 250 && (() => {
+        const idx = idxAtDistance(prog.doneM);
+        const slope = slopeAt(idx);
+        const kmh = speedMs !== null ? speedMs * 3.6 : null;
+        const pace = speedMs && speedMs > 0.2 ? 1000 / speedMs / 60 : null;
+        const etaMin = speedMs && speedMs > 0.2 ? prog.remainingM / speedMs / 60 : null;
+        const eta = etaMin !== null ? new Date(Date.now() + etaMin * 60000) : null;
+        const stat = (label: string, value: string) => (
+          <div key={label}>
+            <div className="text-xl font-light text-white tabular-nums">{value}</div>
+            <div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">{label}</div>
+          </div>
+        );
+        return (
+          <Card className="mt-4">
+            <Label>Telemetria</Label>
+            <div className="grid grid-cols-3 gap-y-5 text-center">
+              {stat('Quota', Math.round(ELES[idx]) + ' m')}
+              {stat('Pendenza', (slope > 0 ? '+' : '') + slope.toFixed(0) + '%')}
+              {stat('Velocità', kmh !== null ? kmh.toFixed(1) + ' km/h' : '—')}
+              {stat('Passo', pace !== null ? Math.floor(pace) + "'" + String(Math.round((pace % 1) * 60)).padStart(2, '0') + '"' : '—')}
+              {stat('Salita fatta', '+' + Math.round(GAINS[idx]) + ' m')}
+              {stat('Arrivo', eta ? eta.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}
+            </div>
+            <p className="text-[10px] text-neutral-600 mt-4 text-center uppercase tracking-[0.15em]">
+              Salita rimanente +{Math.round(GAINS[GAINS.length - 1] - GAINS[idx])} m · stima arrivo sulla tua andatura
+            </p>
+          </Card>
+        );
+      })()}
     </div>
   );
 }
