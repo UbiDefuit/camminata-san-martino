@@ -713,6 +713,29 @@ function Admin() {
 
   const totAdulti = list.reduce((s, p) => s + p.adults, 0);
   const totBimbi = list.reduce((s, p) => s + p.children, 0);
+
+  // Export CSV per chi prepara la colazione (separatore ; e BOM per Excel italiano)
+  const exportCsv = () => {
+    const righe = [
+      ['Nome', 'Contatto', 'Adulti', 'Bambini', 'Note/intolleranze', 'Check-in', 'Colazione', 'Iscritto il'],
+      ...list.map((p) => [
+        p.name, p.contact, p.adults, p.children, p.notes || '',
+        p.checked_in ? 'SI' : 'no', p.voucher_used ? 'SI' : 'no',
+        new Date(p.created_at).toLocaleString('it-IT'),
+      ]),
+      [],
+      ['Totale iscrizioni', list.length],
+      ['Totale persone', totAdulti + totBimbi],
+      ['di cui adulti', totAdulti],
+      ['di cui bambini', totBimbi],
+    ];
+    const csv = '\uFEFF' + righe.map((r) => r.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    a.download = 'iscritti-san-martino-2.0.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
   const tabBtn = (active: boolean) =>
     (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
     ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
@@ -741,7 +764,13 @@ function Admin() {
       </Card>
 
       <Card>
-        <Label>Iscritti</Label>
+        <div className="flex items-center justify-between mb-3">
+          <Label>Iscritti</Label>
+          <button onClick={exportCsv} disabled={list.length === 0}
+            className="text-xs uppercase tracking-[0.15em] border border-neutral-700 text-white hover:border-white px-3 py-1.5 transition disabled:opacity-30">
+            Esporta CSV
+          </button>
+        </div>
         {list.length === 0 && <p className="text-neutral-600 text-sm font-light">Nessuna iscrizione ancora.</p>}
         <ul className="divide-y divide-neutral-800 text-sm">
           {list.map((p) => (
