@@ -635,11 +635,17 @@ function Mappa() {
       </div>
       <Card className="mt-4">
         <Label>Altimetria</Label>
-        <AltimetryProfile doneM={prog ? prog.doneM : null} />
+        <AltimetryProfile doneM={prog && prog.offTrackM <= 250 ? prog.doneM : null} />
       </Card>
       <Card className="mt-4">
         <Label>Il tuo avanzamento</Label>
         {prog ? (
+          prog.offTrackM > 250 ? (
+            <p className="text-neutral-400 text-sm font-light">
+              Sei a {prog.offTrackM >= 1000 ? (prog.offTrackM / 1000).toFixed(1) + ' km' : Math.round(prog.offTrackM) + ' m'} dal sentiero.
+              L'avanzamento apparirà quando sarai sul percorso.
+            </p>
+          ) : (
           <>
             <div className="h-1 bg-neutral-800 overflow-hidden">
               <div className="h-full bg-white transition-all" style={{ width: prog.pct + '%' }} />
@@ -649,10 +655,11 @@ function Mappa() {
               <span className="font-semibold text-white">{prog.pct}%</span>
               <span>{(prog.remainingM / 1000).toFixed(1)} km rimasti</span>
             </div>
-            {prog.offTrackM > 150 && (
+            {prog.offTrackM > 100 && (
               <p className="text-red-400 text-sm mt-3">Attenzione: sei a {Math.round(prog.offTrackM)} m dal sentiero.</p>
             )}
           </>
+          )
         ) : (
           <p className="text-neutral-500 text-sm font-light">
             {gpsErr ? 'GPS non disponibile: ' + gpsErr : 'In attesa della posizione GPS…'}
