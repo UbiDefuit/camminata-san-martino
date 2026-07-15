@@ -486,9 +486,9 @@ function Mappa() {
       const map = map3dRef.current;
       const len = TRACK.length;
       let i = 0;
-      // Volo "drone": camera pilotata direttamente (FreeCameraOptions),
-      // sempre sopra il crinale più alto della zona inquadrata: non può
-      // entrare nel terreno. Durata ~18s.
+      // Volo "drone" con calculateCameraOptionsFromTo: camera arretrata sul
+      // tracciato, quota = crinale più alto della zona inquadrata + margine.
+      // Per costruzione non può entrare nel terreno. Durata ~18s.
       let smPos: [number, number] | null = null;
       let smLook: [number, number] | null = null;
       let smAlt: number | null = null;
@@ -499,25 +499,30 @@ function Mappa() {
         return [la / n, lo / n];
       };
       flyTimer.current = setInterval(() => {
-        i += 4;
-        if (i >= len - 6) {
+        try {
+          i += 4;
+          if (i >= len - 6) {
+            stopFly();
+            map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2500 });
+            return;
+          }
+          const camIdx = Math.max(0, i - 22);
+          const lookIdx = Math.min(i + 14, len - 1);
+          const pos = avgPoint(camIdx, 10);
+          const look = avgPoint(lookIdx, 6);
+          const alt = Math.max(...ELES.slice(camIdx, lookIdx + 1)) + 220;
+          smPos = smPos ? [smPos[0] + (pos[0] - smPos[0]) * 0.15, smPos[1] + (pos[1] - smPos[1]) * 0.15] : pos;
+          smLook = smLook ? [smLook[0] + (look[0] - smLook[0]) * 0.2, smLook[1] + (look[1] - smLook[1]) * 0.2] : look;
+          smAlt = smAlt !== null ? smAlt + (alt - smAlt) * 0.1 : alt;
+          const cam = map.calculateCameraOptionsFromTo(
+            { lng: smPos[1], lat: smPos[0] }, smAlt,
+            { lng: smLook[1], lat: smLook[0] }, ELES[lookIdx]
+          );
+          map.jumpTo(cam);
+        } catch (e) {
+          console.error('[volo]', e);
           stopFly();
-          map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2500 });
-          return;
         }
-        const camIdx = Math.max(0, i - 22);
-        const pos = avgPoint(camIdx, 10);
-        const look = avgPoint(Math.min(i + 14, len - 1), 6);
-        // quota: il punto più alto tra camera e punto inquadrato, più margine
-        const alt = Math.max(...ELES.slice(camIdx, Math.min(i + 14, len))) + 240;
-        // smoothing per un movimento fluido
-        smPos = smPos ? [smPos[0] + (pos[0] - smPos[0]) * 0.15, smPos[1] + (pos[1] - smPos[1]) * 0.15] : pos;
-        smLook = smLook ? [smLook[0] + (look[0] - smLook[0]) * 0.2, smLook[1] + (look[1] - smLook[1]) * 0.2] : look;
-        smAlt = smAlt !== null ? smAlt + (alt - smAlt) * 0.1 : alt;
-        const cam = map.getFreeCameraOptions();
-        cam.position = maplibregl.MercatorCoordinate.fromLngLat({ lng: smPos[1], lat: smPos[0] }, smAlt);
-        cam.lookAtPoint({ lng: smLook[1], lat: smLook[0] });
-        map.setFreeCameraOptions(cam);
       }, 70);
     }
   };
