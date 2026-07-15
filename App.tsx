@@ -485,40 +485,85 @@ function Mappa() {
     } else if (mode === '3d' && map3dRef.current) {
       const map = map3dRef.current;
       const len = TRACK.length;
-      let i = 0;
-      // Volo "drone" con calculateCameraOptionsFromTo: camera arretrata sul
-      // tracciato, quota = crinale più alto della zona inquadrata + margine.
-      // Per costruzione non può entrare nel terreno. Durata ~18s.
-      let smPos: [number, number] | null = null;
-      let smLook: [number, number] | null = null;
-      let smAlt: number | null = null;
+      const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
       const avgPoint = (idx: number, r: number): [number, number] => {
         const a = Math.max(0, idx - r), b = Math.min(len - 1, idx + r);
         let la = 0, lo = 0, n = 0;
         for (let k = a; k <= b; k++) { la += TRACK[k][0]; lo += TRACK[k][1]; n++; }
         return [la / n, lo / n];
       };
+      // Camera "a terra" davanti alla canonica: 55 m arretrata rispetto
+      // alla direzione di partenza del sentiero, a 2,5 m dal suolo.
+      const rad = Math.PI / 180;
+      const off = (p: [number, number], b: number, d: number): [number, number] => [
+        p[0] + (d * Math.cos(b * rad)) / 111320,
+        p[1] + (d * Math.sin(b * rad)) / (111320 * Math.cos(p[0] * rad)),
+      ];
+      const backB = bearingBetween(TRACK[6], TRACK[0]);
+      const groundCam = off(TRACK[0], backB, 55);
+      const groundAlt = ELES[0] + 2.5;
+      const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+      const lerpP = (a: [number, number], b: [number, number], t: number): [number, number] =>
+        [lerp(a[0], b[0], t), lerp(a[1], b[1], t)];
+
+      const cruiseStartPos = avgPoint(0, 10);
+      const cruiseStartAlt = Math.max(...ELES.slice(0, 15)) + 220;
+
+      let phase: 'decollo' | 'volo' | 'atterraggio' = 'decollo';
+      let f = 0; const F = 34; // ~2,4 s per decollo e atterraggio
+      let i = 0;
+      let smPos: [number, number] = groundCam;
+      let smLook: [number, number] = TRACK[0];
+      let smAlt = groundAlt;
+
+      // vista iniziale: a terra, davanti alla canonica
+      try {
+        map.jumpTo(map.calculateCameraOptionsFromTo(
+          { lng: groundCam[1], lat: groundCam[0] }, groundAlt,
+          { lng: TRACK[0][1], lat: TRACK[0][0] }, ELES[0] + 6));
+      } catch { /* ignora */ }
+
       flyTimer.current = setInterval(() => {
         try {
-          i += 4;
-          if (i >= len - 6) {
-            stopFly();
-            map.easeTo({ center: [TRACK[0][1], TRACK[0][0]], zoom: 13.8, pitch: 65, bearing: 160, duration: 2500 });
-            return;
+          let lookEle = ELES[0] + 6;
+          if (phase === 'decollo') {
+            f++;
+            const t = ease(f / F);
+            smPos = lerpP(groundCam, cruiseStartPos, t);
+            smAlt = lerp(groundAlt, cruiseStartAlt, t);
+            smLook = lerpP(TRACK[0], avgPoint(14, 6), t);
+            if (f >= F) { phase = 'volo'; i = 0; }
+          } else if (phase === 'volo') {
+            i += 4;
+            if (i >= len - 6) { phase = 'atterraggio'; f = 0; }
+            else {
+              const camIdx = Math.max(0, i - 22);
+              const lookIdx = Math.min(i + 14, len - 1);
+              const pos = avgPoint(camIdx, 10);
+              const look = avgPoint(lookIdx, 6);
+              const alt = Math.max(...ELES.slice(camIdx, lookIdx + 1)) + 220;
+              smPos = [smPos[0] + (pos[0] - smPos[0]) * 0.15, smPos[1] + (pos[1] - smPos[1]) * 0.15];
+              smLook = [smLook[0] + (look[0] - smLook[0]) * 0.2, smLook[1] + (look[1] - smLook[1]) * 0.2];
+              smAlt += (alt - smAlt) * 0.1;
+              lookEle = ELES[lookIdx];
+            }
+          } else {
+            f++;
+            const t = ease(f / F) * 0.35; // avvicinamento progressivo
+            smPos = lerpP(smPos, groundCam, t);
+            smAlt = lerp(smAlt, groundAlt, t);
+            smLook = lerpP(smLook, TRACK[0], t);
+            if (f >= F) {
+              map.jumpTo(map.calculateCameraOptionsFromTo(
+                { lng: groundCam[1], lat: groundCam[0] }, groundAlt,
+                { lng: TRACK[0][1], lat: TRACK[0][0] }, ELES[0] + 6));
+              stopFly();
+              return;
+            }
           }
-          const camIdx = Math.max(0, i - 22);
-          const lookIdx = Math.min(i + 14, len - 1);
-          const pos = avgPoint(camIdx, 10);
-          const look = avgPoint(lookIdx, 6);
-          const alt = Math.max(...ELES.slice(camIdx, lookIdx + 1)) + 220;
-          smPos = smPos ? [smPos[0] + (pos[0] - smPos[0]) * 0.15, smPos[1] + (pos[1] - smPos[1]) * 0.15] : pos;
-          smLook = smLook ? [smLook[0] + (look[0] - smLook[0]) * 0.2, smLook[1] + (look[1] - smLook[1]) * 0.2] : look;
-          smAlt = smAlt !== null ? smAlt + (alt - smAlt) * 0.1 : alt;
-          const cam = map.calculateCameraOptionsFromTo(
+          map.jumpTo(map.calculateCameraOptionsFromTo(
             { lng: smPos[1], lat: smPos[0] }, smAlt,
-            { lng: smLook[1], lat: smLook[0] }, ELES[lookIdx]
-          );
-          map.jumpTo(cam);
+            { lng: smLook[1], lat: smLook[0] }, lookEle));
         } catch (e) {
           console.error('[volo]', e);
           stopFly();
