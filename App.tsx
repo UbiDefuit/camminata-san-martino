@@ -641,7 +641,7 @@ function Admin() {
   const [pinErr, setPinErr] = useState('');
   const scannerRef = useRef<Html5Qrcode | null>(null);
 
-  const refresh = () => listParticipants().then(setList);
+  const refresh = () => listParticipants(pin).then(setList).catch(() => {});
   useEffect(() => { if (authed) refresh(); }, [authed]);
 
   const login = async () => {

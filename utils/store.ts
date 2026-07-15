@@ -22,11 +22,13 @@ const lsWrite = (list: Participant[]) => localStorage.setItem(LS_KEY, JSON.strin
 
 export async function register(p: Omit<Participant, 'id' | 'created_at' | 'checked_in' | 'voucher_used'>): Promise<Participant> {
   if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!.from(TABLE)
-      .insert({ name: p.name, contact: p.contact, adults: p.adults, children: p.children, notes: p.notes, consent: p.consent })
-      .select().single();
+    // id generato qui: la tabella non è più leggibile pubblicamente,
+    // quindi niente INSERT..RETURNING (richiederebbe una policy SELECT)
+    const id = crypto.randomUUID();
+    const { error } = await supabase!.from(TABLE)
+      .insert({ id, name: p.name, contact: p.contact, adults: p.adults, children: p.children, notes: p.notes, consent: p.consent });
     if (error) throw error;
-    return data as Participant;
+    return { ...p, id, created_at: new Date().toISOString(), checked_in: false, voucher_used: false };
   }
   const row: Participant = {
     ...p, id: crypto.randomUUID(), created_at: new Date().toISOString(),
@@ -36,19 +38,21 @@ export async function register(p: Omit<Participant, 'id' | 'created_at' | 'check
   return row;
 }
 
-export async function listParticipants(): Promise<Participant[]> {
+export async function listParticipants(pin: string): Promise<Participant[]> {
   if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!.from(TABLE).select('*').order('created_at');
-    if (error) throw error;
-    return data as Participant[];
+    const { data, error } = await supabase!.rpc('sm2_staff_list', { pin });
+    if (error) throw new Error(error.message);
+    return (data || []) as Participant[];
   }
   return lsRead();
 }
 
 export async function getParticipant(id: string): Promise<Participant | null> {
   if (isSupabaseConfigured()) {
-    const { data } = await supabase!.from(TABLE).select('*').eq('id', id).maybeSingle();
-    return (data as Participant) || null;
+    const { data, error } = await supabase!.rpc('sm2_get_ticket', { p_id: id });
+    if (error) return null;
+    const row = Array.isArray(data) ? data[0] : data;
+    return (row as Participant) || null;
   }
   return lsRead().find((p) => p.id === id) || null;
 }
