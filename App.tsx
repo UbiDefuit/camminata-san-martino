@@ -360,7 +360,8 @@ function Mappa() {
   const [gpsErr, setGpsErr] = useState('');
 
   // Street View reale della canonica (embed senza chiave) per intro/outro del volo
-  const SV_URL = 'https://maps.google.com/maps?layer=c&cbll=44.38735,10.68935&cbp=11,205,0,0,0&source=embed&output=svembed';
+  // Foto della Chiesa Parrocchiale di San Martino Vescovo (visualizzatore ufficiale Google Maps)
+  const SV_URL = 'https://www.google.com/maps/embed?pb=!4v1752600000000!6m8!1m7!1sCIHM0ogKEICAgIDnw5CkSA!2m2!1d44.3871844!2d10.6893262!3f0!4f0!5f0.7820865974627469';
   const [svMounted, setSvMounted] = useState(false);
   const [svOpaque, setSvOpaque] = useState(false);
   const svTimers = useRef<number[]>([]);
