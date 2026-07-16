@@ -123,12 +123,26 @@ export function friendlyError(e: any): string {
 }
 
 // Statistiche pubbliche (nessun dato personale): posti e scadenza iscrizioni
-export interface PublicStats { taken: number; cap: number; deadline: string; }
+export interface PublicStats { taken: number; cap: number; deadline: string; colazione_aperta: boolean; }
 export async function publicStats(): Promise<PublicStats | null> {
   if (!isSupabaseConfigured()) return null;
   const { data, error } = await supabase!.rpc('sm2_public_stats');
   if (error) return null;
   return data as PublicStats;
+}
+
+// Staff: apre/chiude la consegna colazioni
+export async function setColazioneAperta(aperta: boolean, pin: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase!.rpc('sm2_set_colazione', { p_aperta: aperta, pin });
+  if (error) throw new Error(error.message);
+}
+
+// Staff: annulla un check-in o una consegna registrati per errore
+export async function resetFlag(id: string, flag: 'checkin' | 'colazione', pin: string): Promise<void> {
+  if (!isSupabaseConfigured()) return;
+  const { error } = await supabase!.rpc('sm2_reset_flag', { p_id: id, p_flag: flag, pin });
+  if (error) throw new Error(error.message);
 }
 
 // Il "mio" tagliandino su questo telefono

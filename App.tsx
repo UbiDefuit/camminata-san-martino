@@ -8,6 +8,7 @@ import {
   Participant, register, listParticipants, getParticipant, checkIn, redeemVoucher,
   verifyStaffPin, findTicket, cancelParticipant, friendlyError, getMyTicketId, setMyTicketId,
   EventPhoto, listPhotos, uploadPhoto, hidePhoto, PublicStats, publicStats,
+  setColazioneAperta, resetFlag,
 } from './utils/store';
 import { TRACK, ELES, DISTS, GAINS, POIS, TOTAL_M, ELEVATION_GAIN_M, progressOnTrack, idxAtDistance, slopeAt } from './utils/track';
 import { isSupabaseConfigured } from './utils/supabase';
@@ -818,7 +819,15 @@ function Admin() {
   const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState('');
   const [pendingCol, setPendingCol] = useState<Participant | null>(null);
+  const [colAperta, setColAperta] = useState(false);
   const lastSeen = useRef<Record<string, number>>({});
+  useEffect(() => { if (authed) publicStats().then((s) => s && setColAperta(!!s.colazione_aperta)); }, [authed]);
+  const toggleColazione = async () => {
+    const target = !colAperta;
+    if (!window.confirm(target ? 'Aprire la consegna colazioni?' : 'Chiudere la consegna colazioni?')) return;
+    try { await setColazioneAperta(target, pin); setColAperta(target); setMsg(target ? 'Colazione APERTA' : 'Colazione chiusa'); }
+    catch (e: any) { setMsg(friendlyError(e)); }
+  };
   const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
   const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
   const [pinErr, setPinErr] = useState('');
@@ -851,7 +860,8 @@ function Admin() {
         await checkIn(id, pin);
         setMsg('✓ Check-in: ' + p.name + ' (' + p.adults + 'A · ' + p.children + 'B)');
       } else if (!p.voucher_used) {
-        setPendingCol(p); setMsg('');
+        if (colAperta) { setPendingCol(p); setMsg(''); }
+        else setMsg(p.name + ': già in check-in (la colazione non è ancora aperta)');
       } else {
         setMsg(p.name + ': check-in e colazione già registrati');
       }
@@ -924,6 +934,17 @@ function Admin() {
     refresh();
   };
 
+  const undo = async (p: Participant) => {
+    const flag = p.voucher_used ? 'colazione' : 'checkin';
+    const domanda = flag === 'colazione'
+      ? 'Annullare la CONSEGNA COLAZIONE di ' + p.name + '? (registrata per errore)'
+      : 'Annullare il CHECK-IN di ' + p.name + '?';
+    if (!window.confirm(domanda)) return;
+    try { await resetFlag(p.id, flag, pin); setMsg('Annullato (' + flag + '): ' + p.name); }
+    catch (e: any) { setMsg(friendlyError(e)); }
+    refresh();
+  };
+
   const cancel = async (p: Participant) => {
     if (!window.confirm('Annullare l\'iscrizione di ' + p.name + '?')) return;
     try { await cancelParticipant(p.id, pin); setMsg('Iscrizione annullata: ' + p.name); }
@@ -972,9 +993,15 @@ function Admin() {
       </Card>
 
       <Card>
-        <p className="text-neutral-500 text-xs font-light mb-3">
-          Scanner automatico: primo passaggio = check-in, secondo = colazione (con conferma).
-        </p>
+        <div className="flex items-center justify-between mb-3">
+          <p className="text-neutral-500 text-xs font-light pr-3">
+            Scanner automatico: primo passaggio = check-in{colAperta ? ', secondo = colazione (con conferma)' : ''}.
+          </p>
+          <button onClick={toggleColazione}
+            className={(colAperta ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-700') + ' shrink-0 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] transition'}>
+            {colAperta ? 'Colazione aperta' : 'Colazione chiusa'}
+          </button>
+        </div>
         <div id="scanner" className="overflow-hidden" />
         {pendingCol && (
           <div className="border border-neutral-700 p-4 my-3 text-center space-y-3">
@@ -1026,6 +1053,10 @@ function Admin() {
                   className={(p.voucher_used ? 'text-white border-neutral-800' : 'text-neutral-400 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
                   {p.voucher_used ? '● col' : 'col'}
                 </button>
+                {(p.checked_in || p.voucher_used) && (
+                  <button onClick={() => undo(p)} title="Annulla ultimo stato (errore)"
+                    className="text-neutral-600 hover:text-white border border-neutral-800 px-2 py-1 text-xs transition">↺</button>
+                )}
                 <button onClick={() => cancel(p)} title="Annulla iscrizione"
                   className="text-neutral-600 hover:text-red-400 border border-neutral-800 px-2 py-1 text-xs transition">✕</button>
               </div>
