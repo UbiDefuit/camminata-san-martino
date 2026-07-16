@@ -821,6 +821,10 @@ function Admin() {
   const [pendingCol, setPendingCol] = useState<Participant | null>(null);
   const [colAperta, setColAperta] = useState(false);
   const lastSeen = useRef<Record<string, number>>({});
+  const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
+  const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
+  const [pinErr, setPinErr] = useState('');
+  const scannerRef = useRef<Html5Qrcode | null>(null);
   useEffect(() => { if (authed) publicStats().then((s) => s && setColAperta(!!s.colazione_aperta)); }, [authed]);
   const toggleColazione = async () => {
     const target = !colAperta;
@@ -828,10 +832,7 @@ function Admin() {
     try { await setColazioneAperta(target, pin); setColAperta(target); setMsg(target ? 'Colazione APERTA' : 'Colazione chiusa'); }
     catch (e: any) { setMsg(friendlyError(e)); }
   };
-  const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
-  const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
-  const [pinErr, setPinErr] = useState('');
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+
 
   const refresh = () => listParticipants(pin).then(setList).catch(() => {});
   useEffect(() => { if (authed) refresh(); }, [authed]);
