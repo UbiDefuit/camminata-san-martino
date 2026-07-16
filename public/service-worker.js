@@ -1,38 +1,49 @@
-// Come FamilyLoop: Network First con fallback alla cache.
-// Le tile della mappa vengono messe in cache per l'uso offline sul sentiero.
-const CACHE_NAME = 'camminata-sm-v1';
-const urlsToCache = ['/', '/index.html', '/manifest.json', '/icon.svg'];
+// PWA San Martino 2.0 — cache per l'uso offline sul sentiero
+const CACHE = 'sm2-v3';
+const PRECACHE = ['./', './index.html', './manifest.json', './icon-512.png', './logo.svg', './canonica.jpg'];
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(urlsToCache)));
+  event.waitUntil(caches.open(CACHE).then((c) => c.addAll(PRECACHE)));
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-    )
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
-  // Cache First per le tile OSM (fondamentale offline in montagna)
+  const req = event.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+
+  // Tile OpenStreetMap (mappa 2D): cache-first, fondamentale offline
   if (url.hostname.endsWith('tile.openstreetmap.org')) {
     event.respondWith(
-      caches.match(event.request).then(
-        (hit) =>
-          hit ||
-          fetch(event.request).then((res) => {
-            const copy = res.clone();
-            caches.open(CACHE_NAME).then((c) => c.put(event.request, copy));
-            return res;
-          })
+      caches.match(req).then((hit) => hit || fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+        return res;
+      }))
+    );
+    return;
+  }
+
+  // Stessa origine (app, JS, CSS, immagini): network-first con cache di riserva
+  if (url.origin === self.location.origin) {
+    event.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy));
+        return res;
+      }).catch(() =>
+        caches.match(req).then((hit) => hit || (req.mode === 'navigate' ? caches.match('./index.html') : undefined))
       )
     );
     return;
   }
-  // Network First per il resto
-  event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+  // Tutto il resto (Supabase, satellite 3D): solo rete
 });
