@@ -11,3 +11,16 @@ html, body { height: 100%; }
   100% { transform: scale(1.12); }
 }
 .kenburns { animation: kenburns 9s ease-out forwards; }
+
+/* Medaglia finisher */
+@keyframes medalPop {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.medal-pop { animation: medalPop 0.9s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+@keyframes medalRing {
+  0% { box-shadow: 0 0 0 0 rgba(255,255,255,0.5); }
+  100% { box-shadow: 0 0 0 26px rgba(255,255,255,0); }
+}
+.medal-ring { animation: medalRing 1.6s ease-out 0.6s 3; }

@@ -296,6 +296,9 @@ function Tagliandino() {
           <p className={p.voucher_used ? 'text-white' : 'text-neutral-600'}>
             {p.voucher_used ? '● Colazione ritirata' : '○ Colazione da ritirare al rientro'}
           </p>
+          {localStorage.getItem('sm2_finished') && (
+            <p className="text-white">★ Finisher · {Math.floor(Number(localStorage.getItem('sm2_finished')) / 60)}h {String(Number(localStorage.getItem('sm2_finished')) % 60).padStart(2, '0')}'</p>
+          )}
         </div>
       </Card>
       <p className="text-xs text-neutral-600 px-6 font-light">
@@ -357,6 +360,12 @@ function Mappa() {
   const flyMarkerRef = useRef<L.CircleMarker | null>(null);
   const flyTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const [flying, setFlying] = useState(false);
+  const flyingRef = useRef(false);
+  const [recording, setRecording] = useState(false);
+  const [finisherMin, setFinisherMin] = useState<number | null>(null);
+  useEffect(() => {
+    if (new URLSearchParams(location.search).get('finisher') === 'test') setFinisherMin(148);
+  }, []);
   const [prog, setProg] = useState<ReturnType<typeof progressOnTrack> | null>(null);
   const [gpsErr, setGpsErr] = useState('');
   const fixesRef = useRef<{ t: number; d: number }[]>([]);
@@ -378,6 +387,7 @@ function Mappa() {
     flyTimer.current = null;
     flyMarkerRef.current?.remove(); flyMarkerRef.current = null;
     setFlying(false);
+    flyingRef.current = false;
   };
 
   // GPS condiviso tra le due modalità
@@ -388,6 +398,21 @@ function Mappa() {
         const p = progressOnTrack(pos);
         setProg(p);
         setGpsErr('');
+        // finisher: partenza registrata vicino al via, arrivo dopo aver superato metà percorso
+        if (p.offTrackM <= 250) {
+          if (!localStorage.getItem('sm2_walk_start') && p.doneM < 600) {
+            localStorage.setItem('sm2_walk_start', String(Date.now()));
+          }
+          const maxd = Math.max(Number(localStorage.getItem('sm2_max_done') || 0), p.doneM);
+          localStorage.setItem('sm2_max_done', String(maxd));
+          const start = Number(localStorage.getItem('sm2_walk_start') || 0);
+          if (start && !localStorage.getItem('sm2_finished')
+            && maxd > TOTAL_M * 0.6 && p.pct >= 95 && Date.now() - start > 30 * 60000) {
+            const min = Math.round((Date.now() - start) / 60000);
+            localStorage.setItem('sm2_finished', String(min));
+            setFinisherMin(min);
+          }
+        }
         // telemetria: media mobile della velocità lungo il sentiero (finestra ~3 min)
         if (p.offTrackM <= 250) {
           const now = Date.now();
@@ -499,6 +524,7 @@ function Mappa() {
       return;
     }
     setFlying(true);
+    flyingRef.current = true;
     if (mode === '2d' && map2dRef.current) {
       const map = map2dRef.current;
       map.setView(TRACK[0], 16, { animate: true });
@@ -621,6 +647,111 @@ function Mappa() {
     }
   };
 
+  // ---------- Video ricordo: volo 3D registrato con overlay personalizzato ----------
+  const formatMin = (m: number) => (m >= 60 ? Math.floor(m / 60) + 'h ' + String(m % 60).padStart(2, '0') + "'" : m + "'");
+
+  const recordVideo = async () => {
+    const map = map3dRef.current;
+    if (mode !== '3d' || !map || recording || flying) return;
+    setRecording(true);
+    try {
+      const myId = getMyTicketId();
+      const me = myId ? await getParticipant(myId) : null;
+      const nome = (me?.name || '').toUpperCase();
+      const finMin = Number(localStorage.getItem('sm2_finished') || 0);
+
+      const W = 720, H = 1280;
+      const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+      const ctx = cv.getContext('2d')!;
+      const photo = new Image(); photo.src = './canonica.jpg';
+      await photo.decode().catch(() => { /* offline: intro nera */ });
+
+      const stream = (cv as any).captureStream(30);
+      const mime = ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm']
+        .find((m) => (window as any).MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+      if (!mime) throw new Error('Registrazione video non supportata da questo browser');
+      const rec = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 5000000 });
+      const chunks: Blob[] = [];
+      rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+      const finito = new Promise<Blob>((res) => { rec.onstop = () => res(new Blob(chunks, { type: mime.startsWith('video/mp4') ? 'video/mp4' : 'video/webm' })); });
+      rec.start(500);
+
+      const drawCover = (src: CanvasImageSource, sw: number, sh: number, zoom = 1) => {
+        const sc = Math.max(W / sw, H / sh) * zoom;
+        const dw = sw * sc, dh = sh * sc;
+        ctx.drawImage(src, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      };
+      const hud = () => {
+        const g = ctx.createLinearGradient(0, H - 460, 0, H);
+        g.addColorStop(0, 'rgba(0,0,0,0)'); g.addColorStop(1, 'rgba(0,0,0,0.88)');
+        ctx.fillStyle = g; ctx.fillRect(0, H - 460, W, 460);
+        ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+        ctx.font = '600 24px Helvetica, Arial, sans-serif';
+        ctx.fillText('F I R S T   E D I T I O N', W / 2, 88);
+        if (nome) { ctx.font = 'bold 52px Helvetica, Arial, sans-serif'; ctx.fillText(nome, W / 2, H - 240); }
+        ctx.font = '300 30px Helvetica, Arial, sans-serif';
+        ctx.fillText('SAN MARTINO 2.0 — INTO THE WILD', W / 2, H - 185);
+        ctx.font = '300 27px Helvetica, Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.fillText('5,5 KM · +422 M' + (finMin ? ' · ' + formatMin(finMin) : ''), W / 2, H - 135);
+        ctx.fillStyle = '#fff'; ctx.fillRect(W / 2 - 40, H - 108, 80, 3);
+        ctx.font = '300 21px Helvetica, Arial, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillText('1 AGOSTO 2026 · POLINAGO', W / 2, H - 70);
+      };
+
+      const mapCanvas = map.getCanvas();
+      const INTRO = 3000, OUTRO = 2600;
+      let t0 = 0; let flightStarted = false; let outroT = 0; let stopped = false;
+      const loop = (t: number) => {
+        if (stopped) return;
+        if (!t0) t0 = t;
+        const el = t - t0;
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+        if (el < INTRO) {
+          if (photo.width) drawCover(photo, photo.width, photo.height, 1 + 0.07 * (el / INTRO));
+        } else {
+          if (!flightStarted) {
+            flightStarted = true;
+            setFlying(true); flyingRef.current = true;
+            start3dFlight();
+          }
+          if (flyingRef.current) {
+            drawCover(mapCanvas, mapCanvas.width, mapCanvas.height);
+          } else {
+            if (!outroT) outroT = t;
+            if (photo.width) drawCover(photo, photo.width, photo.height, 1.07 - 0.05 * Math.min(1, (t - outroT) / OUTRO));
+            if (t - outroT > OUTRO) {
+              stopped = true; rec.stop(); return;
+            }
+          }
+        }
+        hud();
+        requestAnimationFrame(loop);
+      };
+      requestAnimationFrame(loop);
+
+      const blob = await finito;
+      const ext = blob.type.includes('mp4') ? 'mp4' : 'webm';
+      const file = new File([blob], 'san-martino-into-the-wild.' + ext, { type: blob.type });
+      const nav: any = navigator;
+      if (nav.canShare && nav.canShare({ files: [file] })) {
+        try { await nav.share({ files: [file], title: 'San Martino 2.0 — Into the Wild' }); }
+        catch { /* annullato: scarica */ downloadBlob(blob, file.name); }
+      } else downloadBlob(blob, file.name);
+    } catch (e: any) {
+      alert('Video non riuscito: ' + (e.message || e));
+    } finally {
+      setRecording(false);
+      svHideNow();
+    }
+  };
+  const downloadBlob = (b: Blob, name: string) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(b); a.download = name; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  };
+
   const tabBtn = (active: boolean) =>
     (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
     ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
@@ -648,8 +779,8 @@ function Mappa() {
         </div>
       )}
       <div className="grid grid-cols-2 gap-3 mt-4">
-        <button onClick={flyover}
-          className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition">
+        <button onClick={flyover} disabled={recording}
+          className="border border-neutral-700 text-white hover:border-white px-3 py-3 font-semibold uppercase tracking-[0.15em] text-xs transition disabled:opacity-40">
           {flying ? 'Ferma il volo' : mode === '3d' ? 'Volo cinematico' : 'Sorvola il percorso'}
         </button>
         <a href="./percorso.gpx" download="san-martino-into-the-wild.gpx"
@@ -657,6 +788,35 @@ function Mappa() {
           Scarica GPX
         </a>
       </div>
+      {mode === '3d' && (
+        <button onClick={recordVideo} disabled={recording || flying}
+          className="w-full mt-3 bg-white text-black px-3 py-3.5 font-semibold uppercase tracking-[0.15em] text-xs transition disabled:opacity-50">
+          {recording ? 'Registrazione in corso… (~25s)' : 'Crea il tuo video ricordo'}
+        </button>
+      )}
+      {finisherMin !== null && (
+        <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
+          <div className="medal-pop">
+            <div className="medal-ring w-44 h-44 rounded-full border-4 border-white flex flex-col items-center justify-center mx-auto">
+              <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400">San Martino 2.0</span>
+              <span className="text-2xl font-bold tracking-tight text-white mt-1">FINISHER</span>
+              <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400 mt-1">First Edition</span>
+            </div>
+            <p className="text-white text-3xl font-light mt-8 tabular-nums">{formatMin(finisherMin)}</p>
+            <p className="text-neutral-500 text-xs uppercase tracking-[0.25em] mt-2">Into the Wild · 5,5 km · +422 m</p>
+            <div className="mt-8 space-y-3 w-64 mx-auto">
+              <button onClick={() => { setFinisherMin(null); setMode('3d'); }}
+                className="w-full bg-white text-black py-3.5 font-semibold uppercase tracking-[0.15em] text-xs">
+                Crea il tuo video ricordo
+              </button>
+              <button onClick={() => setFinisherMin(null)}
+                className="w-full border border-neutral-700 text-white py-3.5 font-semibold uppercase tracking-[0.15em] text-xs">
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Card className="mt-4">
         <Label>Altimetria</Label>
         <AltimetryProfile doneM={prog && prog.offTrackM <= 250 ? prog.doneM : null} />
