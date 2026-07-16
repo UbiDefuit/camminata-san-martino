@@ -817,7 +817,8 @@ function Admin() {
   const [list, setList] = useState<Participant[]>([]);
   const [scanning, setScanning] = useState(false);
   const [msg, setMsg] = useState('');
-  const [mode, setMode] = useState<'checkin' | 'colazione'>('checkin');
+  const [pendingCol, setPendingCol] = useState<Participant | null>(null);
+  const lastSeen = useRef<Record<string, number>>({});
   const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
   const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
   const [pinErr, setPinErr] = useState('');
@@ -836,20 +837,39 @@ function Admin() {
     } catch (e: any) { setPinErr('Errore: ' + (e.message || e)); }
   };
 
+  // Scanner smart: decide da solo in base allo stato del tagliandino.
+  // Check-in: automatico. Colazione: chiede UNA conferma (contro doppie letture).
   const onScan = async (id: string) => {
+    if (pendingCol) return; // in attesa di conferma: ignora nuove letture
+    const now = Date.now();
+    if (lastSeen.current[id] && now - lastSeen.current[id] < 8000) return; // anti doppia lettura
+    lastSeen.current[id] = now;
     try {
       const p = await getParticipant(id);
       if (!p) { setMsg('QR non riconosciuto'); return; }
-      if (mode === 'checkin') {
-        if (p.checked_in) setMsg(p.name + ': check-in già fatto');
-        else { await checkIn(id, pin); setMsg('Check-in: ' + p.name); }
+      if (!p.checked_in) {
+        await checkIn(id, pin);
+        setMsg('✓ Check-in: ' + p.name + ' (' + p.adults + 'A · ' + p.children + 'B)');
+      } else if (!p.voucher_used) {
+        setPendingCol(p); setMsg('');
       } else {
-        await redeemVoucher(id, pin);
-        setMsg('Colazione consegnata a ' + p.name);
+        setMsg(p.name + ': check-in e colazione già registrati');
       }
     } catch (e: any) {
       setMsg((e.message || e).includes('già ritirata') ? 'ATTENZIONE: colazione GIÀ RITIRATA' : 'Errore: ' + (e.message || e));
     }
+    refresh();
+  };
+
+  const confirmCol = async () => {
+    if (!pendingCol) return;
+    try {
+      await redeemVoucher(pendingCol.id, pin);
+      setMsg('🥐 ' + (pendingCol.adults + pendingCol.children) + ' colazioni consegnate a ' + pendingCol.name);
+    } catch (e: any) {
+      setMsg((e.message || e).includes('già ritirata') ? 'ATTENZIONE: colazione GIÀ RITIRATA' : friendlyError(e));
+    }
+    setPendingCol(null);
     refresh();
   };
 
@@ -952,14 +972,28 @@ function Admin() {
       </Card>
 
       <Card>
-        <div className="flex gap-2 mb-4">
-          <button onClick={() => setMode('checkin')} className={tabBtn(mode === 'checkin')}>Check-in</button>
-          <button onClick={() => setMode('colazione')} className={tabBtn(mode === 'colazione')}>Colazione</button>
-        </div>
+        <p className="text-neutral-500 text-xs font-light mb-3">
+          Scanner automatico: primo passaggio = check-in, secondo = colazione (con conferma).
+        </p>
         <div id="scanner" className="overflow-hidden" />
+        {pendingCol && (
+          <div className="border border-neutral-700 p-4 my-3 text-center space-y-3">
+            <p className="text-white font-semibold">{pendingCol.name}</p>
+            <p className="text-neutral-400 text-sm">
+              Check-in già fatto · consegnare <span className="text-white">{pendingCol.adults + pendingCol.children} colazioni</span>
+              {pendingCol.notes ? <> · <span className="text-white">{pendingCol.notes}</span></> : null}?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={confirmCol}
+                className="flex-1 bg-white text-black py-3 font-semibold uppercase tracking-[0.15em] text-xs">Consegna</button>
+              <button onClick={() => setPendingCol(null)}
+                className="flex-1 border border-neutral-700 text-white py-3 font-semibold uppercase tracking-[0.15em] text-xs">Annulla</button>
+            </div>
+          </div>
+        )}
         {msg && <p className="text-center text-white font-semibold my-3 text-sm">{msg}</p>}
         <Button onClick={scanning ? stopScan : startScan}>
-          {scanning ? 'Ferma scansione' : 'Scansiona QR'}
+          {scanning ? 'Spegni fotocamera' : 'Accendi scanner'}
         </Button>
       </Card>
 
