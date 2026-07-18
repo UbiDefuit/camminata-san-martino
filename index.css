@@ -24,3 +24,32 @@ html, body { height: 100%; }
   100% { box-shadow: 0 0 0 26px rgba(255,255,255,0); }
 }
 .medal-ring { animation: medalRing 1.6s ease-out 0.6s 3; }
+
+/* ---------- TEMA CHIARO OPZIONALE ---------- */
+:root { --ink: #ffffff; --paper: #0a0a0a; }
+html.light { --ink: #141414; --paper: #f4f4f2; }
+
+html.light body { background: #f4f4f2; }
+html.light .bg-black { background-color: #f4f4f2 !important; }
+html.light .bg-neutral-950 { background-color: #ffffff !important; }
+html.light .bg-neutral-900 { background-color: #e9e9e6 !important; }
+html.light .bg-neutral-800 { background-color: #dcdcd8 !important; }
+html.light .bg-black\/95 { background-color: rgba(244,244,242,0.97) !important; }
+html.light .bg-black\/70 { background-color: rgba(255,255,255,0.9) !important; }
+html.light .text-white { color: #141414 !important; }
+html.light .text-neutral-200 { color: #2b2b2b !important; }
+html.light .text-neutral-300 { color: #3c3c3c !important; }
+html.light .text-neutral-400 { color: #585858 !important; }
+html.light .border-neutral-700 { border-color: #9a9a97 !important; }
+html.light .border-neutral-800 { border-color: #d2d2cf !important; }
+html.light .divide-neutral-800 > :not([hidden]) ~ :not([hidden]) { border-color: #e2e2df !important; }
+/* pulsanti primari invertiti: scuri su fondo chiaro */
+html.light .bg-white { background-color: #141414 !important; }
+html.light .text-black { color: #ffffff !important; }
+html.light .hover\:bg-neutral-200:hover { background-color: #333333 !important; }
+html.light .border-white { border-color: #141414 !important; }
+html.light .hover\:border-white:hover { border-color: #141414 !important; }
+html.light .accent-white { accent-color: #141414; }
+html.light .placeholder-neutral-500::placeholder { color: #8a8a8a; }
+/* eccezioni: QR e immagini su sfondo bianco restano bianchi */
+html.light img.bg-white { background-color: #ffffff !important; }

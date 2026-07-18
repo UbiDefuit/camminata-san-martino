@@ -325,16 +325,16 @@ function AltimetryProfile({ doneM }: { doneM: number | null }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-2">
       <defs>
         <linearGradient id="alt" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
-          <stop offset="100%" stopColor="#ffffff" stopOpacity="0.02" />
+          <stop offset="0%" stopColor="var(--ink)" stopOpacity="0.25" />
+          <stop offset="100%" stopColor="var(--ink)" stopOpacity="0.02" />
         </linearGradient>
       </defs>
       <polygon points={`${PAD},${H - PAD} ${line} ${W - PAD},${H - PAD}`} fill="url(#alt)" />
-      <polyline points={line} fill="none" stroke="#ffffff" strokeWidth="2" />
+      <polyline points={line} fill="none" stroke="var(--ink)" strokeWidth="2" />
       {liveX !== null && (
         <>
-          <line x1={liveX} y1={PAD} x2={liveX} y2={H - PAD} stroke="#ffffff" strokeWidth="1" strokeDasharray="3 4" opacity="0.6" />
-          <circle cx={liveX!} cy={liveY!} r="5" fill="#ffffff" stroke="#0a0a0a" strokeWidth="2" />
+          <line x1={liveX} y1={PAD} x2={liveX} y2={H - PAD} stroke="var(--ink)" strokeWidth="1" strokeDasharray="3 4" opacity="0.6" />
+          <circle cx={liveX!} cy={liveY!} r="5" fill="var(--ink)" stroke="var(--paper)" strokeWidth="2" />
         </>
       )}
       <text x={PAD} y={12} fill="#737373" fontSize="11">{Math.round(maxE)} m</text>
@@ -1253,6 +1253,11 @@ function Privacy({ go }: { go: (v: View) => void }) {
 // ---------- App ----------
 export default function App() {
   const [view, setView] = useState<View>('home');
+  const [light, setLight] = useState(localStorage.getItem('sm2_theme') === 'light');
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', light);
+    localStorage.setItem('sm2_theme', light ? 'light' : 'dark');
+  }, [light]);
   const nav: { v: View; label: string }[] = [
     { v: 'home', label: 'Evento' },
     { v: 'iscrizione', label: 'Iscriviti' },
@@ -1264,6 +1269,10 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
+      <button onClick={() => setLight(!light)} title={light ? 'Tema scuro' : 'Tema chiaro'}
+        className="fixed top-3 right-3 z-40 w-10 h-10 border border-neutral-700 bg-black text-white text-lg leading-none">
+        {light ? '🌙' : '☀️'}
+      </button>
       <main className="max-w-lg mx-auto px-5 pb-28">
         {view === 'home' && <Landing go={setView} />}
         {view === 'iscrizione' && <Iscrizione go={setView} />}
