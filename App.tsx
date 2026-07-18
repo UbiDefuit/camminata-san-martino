@@ -997,14 +997,21 @@ function Admin() {
   const refresh = () => listParticipants(pin).then(setList).catch(() => {});
   useEffect(() => { if (authed) refresh(); }, [authed]);
 
+  const [logging, setLogging] = useState(false);
   const login = async () => {
-    setPinErr('');
+    if (logging) return;
+    setPinErr(''); setLogging(true);
     try {
-      if (await verifyStaffPin(pin)) {
+      const ok = await Promise.race([
+        verifyStaffPin(pin),
+        new Promise<never>((_, rej) => setTimeout(() => rej(new Error('Il server non risponde: controlla la connessione e riprova')), 12000)),
+      ]);
+      if (ok) {
         sessionStorage.setItem('sm2_staff_pin', pin);
         setAuthed(true);
       } else setPinErr('PIN non valido.');
-    } catch (e: any) { setPinErr('Errore: ' + (e.message || e)); }
+    } catch (e: any) { setPinErr(friendlyError(e)); }
+    finally { setLogging(false); }
   };
 
   // Scanner smart: decide da solo in base allo stato del tagliandino.
@@ -1054,7 +1061,7 @@ function Admin() {
           value={pin} onChange={(e) => setPin(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && login()} />
         {pinErr && <p className="text-red-400 text-sm text-center">{pinErr}</p>}
-        <Button onClick={login}>Entra</Button>
+        <Button onClick={login} disabled={logging}>{logging ? 'Verifica in corso…' : 'Entra'}</Button>
       </div>
     );
   }
