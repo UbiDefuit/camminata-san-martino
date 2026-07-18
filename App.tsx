@@ -25,7 +25,7 @@ function Card({ children, className = '' }: { children: React.ReactNode; classNa
 }
 
 function Label({ children }: { children: React.ReactNode }) {
-  return <div className="text-[11px] uppercase tracking-[0.25em] text-neutral-500 mb-3">{children}</div>;
+  return <div className="text-xs uppercase tracking-[0.25em] text-neutral-300 mb-3">{children}</div>;
 }
 
 function Button({ children, onClick, disabled = false, variant = 'primary' }: {
@@ -52,7 +52,7 @@ function IscrizioniInfo() {
   const left = Math.max(0, stats.cap - stats.taken);
   const closed = stats.deadline && new Date() > new Date(stats.deadline);
   return (
-    <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-500">
+    <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-300">
       {closed
         ? 'Iscrizioni chiuse'
         : left === 0
@@ -80,10 +80,10 @@ function Landing({ go }: { go: (v: View) => void }) {
     <div className="space-y-6 animate-fade-in-up">
       <div className="text-center pt-10 pb-2">
         <img src="./logo.svg" alt="San Martino 2.0 — The Valley" className="w-44 h-44 mx-auto mb-8 border border-neutral-800" />
-        <div className="text-[11px] uppercase tracking-[0.35em] text-neutral-500 mb-3">First Edition</div>
+        <div className="text-xs uppercase tracking-[0.35em] text-neutral-300 mb-3">First Edition</div>
         <h1 className="text-4xl font-bold tracking-tight text-white leading-tight">San Martino 2.0</h1>
         <p className="text-2xl font-light tracking-[0.2em] uppercase text-neutral-300 mt-1">Into the Wild</p>
-        <p className="text-neutral-500 mt-5 text-sm tracking-wide">
+        <p className="text-neutral-300 mt-5 text-sm tracking-wide">
           Chiesa di San Martino, Polinago<br />Sabato 1 agosto 2026 — ritrovo ore 6:30
         </p>
       </div>
@@ -93,7 +93,7 @@ function Landing({ go }: { go: (v: View) => void }) {
           {[[d, 'giorni'], [h, 'ore'], [m, 'min'], [s, 'sec']].map(([v, l]) => (
             <div key={l as string}>
               <div className="text-3xl font-light text-white tabular-nums">{String(v).padStart(2, '0')}</div>
-              <div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">{l}</div>
+              <div className="text-[11px] text-neutral-300 uppercase tracking-[0.2em] mt-1">{l}</div>
             </div>
           ))}
         </div>
@@ -103,7 +103,7 @@ function Landing({ go }: { go: (v: View) => void }) {
 
       <Card>
         <Label>Sentieri ritrovati</Label>
-        <p className="text-neutral-400 text-sm leading-relaxed font-light">
+        <p className="text-neutral-200 text-[15px] leading-relaxed">
           I volontari della nostra associazione hanno ripulito e riaperto i sentieri storici del
           territorio montano di San Martino. Vieni a percorrerli con noi: {(TOTAL_M / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} km
           tra boschi e punti panoramici, con riprese drone della giornata e, al rientro,{' '}
@@ -113,7 +113,7 @@ function Landing({ go }: { go: (v: View) => void }) {
 
       <Card>
         <Label>Programma</Label>
-        <ul className="text-sm space-y-3 font-light">
+        <ul className="text-[15px] space-y-3">
           {[
             ['6:30', 'Ritrovo e check-in alla Chiesa di San Martino'],
             ['7:00', 'Partenza della camminata'],
@@ -121,7 +121,7 @@ function Landing({ go }: { go: (v: View) => void }) {
             ['9:30', 'Rientro alla chiesa, colazione per tutti (offerta libera, ritiro con tagliandino)'],
           ].map(([t, txt]) => (
             <li key={txt} className="flex gap-4">
-              <span className="text-neutral-500 w-10 shrink-0 tabular-nums">{t}</span>
+              <span className="text-neutral-300 w-10 shrink-0 tabular-nums">{t}</span>
               <span className="text-neutral-300">{txt}</span>
             </li>
           ))}
@@ -130,7 +130,7 @@ function Landing({ go }: { go: (v: View) => void }) {
 
       <Card>
         <Label>Equipaggiamento</Label>
-        <ul className="text-sm space-y-2 font-light text-neutral-300">
+        <ul className="text-[15px] space-y-2 text-neutral-300">
           <li>— Scarpe da trekking o comunque adatte a sentieri sterrati</li>
           <li>— Borraccia con acqua (lungo il percorso non ci sono fontane)</li>
           <li>— Abbigliamento a strati e giacca antipioggia</li>
@@ -141,7 +141,7 @@ function Landing({ go }: { go: (v: View) => void }) {
 
       <Card>
         <Label>Regole e responsabilità</Label>
-        <ul className="text-sm space-y-2 font-light text-neutral-300">
+        <ul className="text-[15px] space-y-2 text-neutral-300">
           <li>— La camminata è un'attività libera e non competitiva: ognuno partecipa a proprio rischio e deve valutare la propria condizione fisica</li>
           <li>— L'associazione declina ogni responsabilità per danni a persone o cose prima, durante e dopo l'evento</li>
           <li>— I minori devono essere accompagnati da un adulto responsabile</li>
@@ -165,11 +165,11 @@ function Landing({ go }: { go: (v: View) => void }) {
       <Card className="text-center">
         <Label>Passaparola</Label>
         {siteQr && <img src={siteQr} alt="QR del sito" className="mx-auto bg-white p-2 w-40" />}
-        <p className="text-neutral-500 text-xs font-light mt-3">
+        <p className="text-neutral-300 text-xs mt-3">
           Fai inquadrare questo QR per far conoscere l'evento.
         </p>
         <button onClick={share}
-          className="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-400 hover:text-white underline underline-offset-4 transition">
+          className="mt-3 text-xs uppercase tracking-[0.2em] text-neutral-200 hover:text-white underline underline-offset-4 transition">
           Condividi il link
         </button>
       </Card>
@@ -199,14 +199,14 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
     } finally { setBusy(false); }
   };
 
-  const input = 'w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-600 focus:outline-none focus:border-white transition text-sm';
+  const input = 'w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-500 focus:outline-none focus:border-white transition text-sm';
 
   return (
     <div className="space-y-4 animate-fade-in-up pt-8">
       <h1 className="text-2xl font-bold tracking-tight text-white">Iscrizione</h1>
       <IscrizioniInfo />
       {!isSupabaseConfigured() && (
-        <p className="text-neutral-400 text-xs border border-neutral-800 p-3 font-light">
+        <p className="text-neutral-200 text-xs border border-neutral-800 p-3">
           Modalità demo: i dati restano solo su questo dispositivo.
         </p>
       )}
@@ -215,23 +215,23 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
       <input className={input} placeholder="Email o telefono" value={form.contact}
         onChange={(e) => setForm({ ...form, contact: e.target.value })} />
       <div className="grid grid-cols-2 gap-3">
-        <label className="text-xs uppercase tracking-[0.15em] text-neutral-500">Adulti
+        <label className="text-xs uppercase tracking-[0.15em] text-neutral-300">Adulti
           <input type="number" min={1} className={input + ' mt-2'} value={form.adults}
             onChange={(e) => setForm({ ...form, adults: +e.target.value })} />
         </label>
-        <label className="text-xs uppercase tracking-[0.15em] text-neutral-500">Bambini
+        <label className="text-xs uppercase tracking-[0.15em] text-neutral-300">Bambini
           <input type="number" min={0} className={input + ' mt-2'} value={form.children}
             onChange={(e) => setForm({ ...form, children: +e.target.value })} />
         </label>
       </div>
       <input className={input} placeholder="Intolleranze o note per la colazione (facoltativo)" value={form.notes}
         onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-      <label className="flex items-start gap-3 text-sm text-neutral-400 font-light">
+      <label className="flex items-start gap-3 text-sm text-neutral-200">
         <input type="checkbox" className="mt-1 accent-white" checked={form.consent}
           onChange={(e) => setForm({ ...form, consent: e.target.checked })} />
         <span>Accetto l'<button type="button" className="underline text-white" onClick={() => go('privacy')}>informativa privacy</button> e autorizzo le riprese foto/video (drone incluso) della giornata.</span>
       </label>
-      <label className="flex items-start gap-3 text-sm text-neutral-400 font-light">
+      <label className="flex items-start gap-3 text-sm text-neutral-200">
         <input type="checkbox" className="mt-1 accent-white" checked={liability}
           onChange={(e) => setLiability(e.target.checked)} />
         <span>Dichiaro di partecipare a mio rischio, di essere in condizione fisica idonea e di sollevare l'associazione da ogni responsabilità per danni a persone o cose. Mi impegno a munirmi dell'equipaggiamento adeguato indicato nella pagina dell'evento.</span>
@@ -270,10 +270,10 @@ function Tagliandino() {
   };
 
   if (!p) return (
-    <div className="pt-12 text-center text-neutral-400 animate-fade-in-up font-light space-y-4 max-w-xs mx-auto">
+    <div className="pt-12 text-center text-neutral-200 animate-fade-in-up space-y-4 max-w-xs mx-auto">
       <p>Nessun tagliandino su questo dispositivo.</p>
-      <p className="text-sm text-neutral-600">Iscriviti, oppure recupera il tuo tagliandino con il contatto usato all'iscrizione.</p>
-      <input className="w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-600 focus:outline-none focus:border-white transition text-sm"
+      <p className="text-sm text-neutral-400">Iscriviti, oppure recupera il tuo tagliandino con il contatto usato all'iscrizione.</p>
+      <input className="w-full bg-black border border-neutral-800 px-4 py-3.5 text-white placeholder-neutral-500 focus:outline-none focus:border-white transition text-sm"
         placeholder="Email o telefono dell'iscrizione" value={recContact}
         onChange={(e) => setRecContact(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && recover()} />
@@ -288,12 +288,12 @@ function Tagliandino() {
       <Card className="mx-auto max-w-xs">
         {qr && <img src={qr} alt="QR tagliandino" className="mx-auto bg-white p-2" />}
         <p className="mt-4 font-semibold text-white">{p.name}</p>
-        <p className="text-sm text-neutral-500 font-light">{p.adults} adulti · {p.children} bambini</p>
+        <p className="text-sm text-neutral-300">{p.adults} adulti · {p.children} bambini</p>
         <div className="mt-4 text-xs uppercase tracking-[0.15em] space-y-2">
-          <p className={p.checked_in ? 'text-white' : 'text-neutral-600'}>
+          <p className={p.checked_in ? 'text-white' : 'text-neutral-400'}>
             {p.checked_in ? '● Check-in effettuato' : '○ Check-in alla partenza'}
           </p>
-          <p className={p.voucher_used ? 'text-white' : 'text-neutral-600'}>
+          <p className={p.voucher_used ? 'text-white' : 'text-neutral-400'}>
             {p.voucher_used ? '● Colazione ritirata' : '○ Colazione da ritirare al rientro'}
           </p>
           {localStorage.getItem('sm2_finished') && (
@@ -301,7 +301,7 @@ function Tagliandino() {
           )}
         </div>
       </Card>
-      <p className="text-xs text-neutral-600 px-6 font-light">
+      <p className="text-xs text-neutral-400 px-6">
         Mostra questo QR al volontario alla partenza (check-in) e al rientro alla chiesa (colazione).
         Funziona anche offline.
       </p>
@@ -753,7 +753,7 @@ function Mappa() {
   };
 
   const tabBtn = (active: boolean) =>
-    (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
+    (active ? 'bg-white text-black' : 'bg-black text-neutral-200 border border-neutral-800') +
     ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
 
   return (
@@ -770,7 +770,7 @@ function Mappa() {
           <img src="./canonica.jpg" alt="Chiesa di San Martino"
             className="w-full h-full object-cover kenburns" />
           <div className="absolute bottom-10 inset-x-0 text-center pointer-events-none px-14">
-            <span className="bg-black/70 text-white text-[11px] uppercase tracking-[0.25em] px-4 py-2">
+            <span className="bg-black/70 text-white text-xs uppercase tracking-[0.25em] px-4 py-2">
               Chiesa di San Martino — partenza e arrivo
             </span>
           </div>
@@ -798,12 +798,12 @@ function Mappa() {
         <div className="fixed inset-0 z-[60] bg-black/95 flex flex-col items-center justify-center p-6 text-center">
           <div className="medal-pop">
             <div className="medal-ring w-44 h-44 rounded-full border-4 border-white flex flex-col items-center justify-center mx-auto">
-              <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400">San Martino 2.0</span>
+              <span className="text-[11px] uppercase tracking-[0.3em] text-neutral-200">San Martino 2.0</span>
               <span className="text-2xl font-bold tracking-tight text-white mt-1">FINISHER</span>
-              <span className="text-[10px] uppercase tracking-[0.3em] text-neutral-400 mt-1">First Edition</span>
+              <span className="text-[11px] uppercase tracking-[0.3em] text-neutral-200 mt-1">First Edition</span>
             </div>
             <p className="text-white text-3xl font-light mt-8 tabular-nums">{formatMin(finisherMin)}</p>
-            <p className="text-neutral-500 text-xs uppercase tracking-[0.25em] mt-2">Into the Wild · 5,5 km · +422 m</p>
+            <p className="text-neutral-300 text-xs uppercase tracking-[0.25em] mt-2">Into the Wild · 5,5 km · +422 m</p>
             <div className="mt-8 space-y-3 w-64 mx-auto">
               <button onClick={() => { setFinisherMin(null); setMode('3d'); }}
                 className="w-full bg-white text-black py-3.5 font-semibold uppercase tracking-[0.15em] text-xs">
@@ -825,7 +825,7 @@ function Mappa() {
         <Label>Il tuo avanzamento</Label>
         {prog ? (
           prog.offTrackM > 250 ? (
-            <p className="text-neutral-400 text-sm font-light">
+            <p className="text-neutral-200 text-sm">
               Sei a {prog.offTrackM >= 1000 ? (prog.offTrackM / 1000).toFixed(1) + ' km' : Math.round(prog.offTrackM) + ' m'} dal sentiero.
               L'avanzamento apparirà quando sarai sul percorso.
             </p>
@@ -834,7 +834,7 @@ function Mappa() {
             <div className="h-1 bg-neutral-800 overflow-hidden">
               <div className="h-full bg-white transition-all" style={{ width: prog.pct + '%' }} />
             </div>
-            <div className="flex justify-between text-sm text-neutral-400 mt-3 font-light">
+            <div className="flex justify-between text-sm text-neutral-200 mt-3">
               <span>{(prog.doneM / 1000).toFixed(1)} km fatti</span>
               <span className="font-semibold text-white">{prog.pct}%</span>
               <span>{(prog.remainingM / 1000).toFixed(1)} km rimasti</span>
@@ -845,7 +845,7 @@ function Mappa() {
           </>
           )
         ) : (
-          <p className="text-neutral-500 text-sm font-light">
+          <p className="text-neutral-300 text-sm">
             {gpsErr ? 'GPS non disponibile: ' + gpsErr : 'In attesa della posizione GPS…'}
             {' '}Percorso totale: {(TOTAL_M / 1000).toLocaleString('it-IT', { maximumFractionDigits: 1 })} km, dislivello +{ELEVATION_GAIN_M} m.
           </p>
@@ -861,7 +861,7 @@ function Mappa() {
         const stat = (label: string, value: string) => (
           <div key={label}>
             <div className="text-xl font-light text-white tabular-nums">{value}</div>
-            <div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">{label}</div>
+            <div className="text-[11px] text-neutral-300 uppercase tracking-[0.2em] mt-1">{label}</div>
           </div>
         );
         return (
@@ -875,7 +875,7 @@ function Mappa() {
               {stat('Salita fatta', '+' + Math.round(GAINS[idx]) + ' m')}
               {stat('Arrivo', eta ? eta.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }) : '—')}
             </div>
-            <p className="text-[10px] text-neutral-600 mt-4 text-center uppercase tracking-[0.15em]">
+            <p className="text-[11px] text-neutral-400 mt-4 text-center uppercase tracking-[0.15em]">
               Salita rimanente +{Math.round(GAINS[GAINS.length - 1] - GAINS[idx])} m · stima arrivo sulla tua andatura
             </p>
           </Card>
@@ -934,7 +934,7 @@ function Foto() {
   return (
     <div className="space-y-4 animate-fade-in-up pt-8">
       <h1 className="text-2xl font-bold tracking-tight text-white">Il muro delle foto</h1>
-      <p className="text-neutral-500 text-sm font-light">
+      <p className="text-neutral-300 text-sm">
         Scatta lungo il sentiero e pubblica: il muro si aggiorna in diretta per tutti.
       </p>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
@@ -943,7 +943,7 @@ function Foto() {
       </Button>
       {msg && <p className="text-center text-sm text-neutral-300">{msg}</p>}
       {photos.length === 0 && (
-        <p className="text-neutral-600 text-sm font-light text-center pt-6">
+        <p className="text-neutral-400 text-sm text-center pt-6">
           Ancora nessuna foto: sii il primo a pubblicare.
         </p>
       )}
@@ -958,7 +958,7 @@ function Foto() {
         <div className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4"
           onClick={() => setFull(null)}>
           <img src={full.url} alt="" className="max-h-[75vh] max-w-full object-contain" />
-          <p className="text-neutral-400 text-sm mt-3 font-light">
+          <p className="text-neutral-200 text-sm mt-3">
             {full.author || 'Anonimo'} · {new Date(full.created_at).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
           </p>
           {staffPin && (
@@ -1048,7 +1048,7 @@ function Admin() {
     return (
       <div className="space-y-4 animate-fade-in-up pt-8 max-w-xs mx-auto">
         <h1 className="text-2xl font-bold tracking-tight text-white">Staff</h1>
-        <p className="text-neutral-500 text-sm font-light">Area riservata ai volontari. Inserisci il PIN staff.</p>
+        <p className="text-neutral-300 text-sm">Area riservata ai volontari. Inserisci il PIN staff.</p>
         <input type="password" inputMode="numeric" placeholder="PIN"
           className="w-full bg-black border border-neutral-800 px-4 py-3.5 text-white text-center tracking-[0.5em] focus:outline-none focus:border-white transition"
           value={pin} onChange={(e) => setPin(e.target.value)}
@@ -1139,7 +1139,7 @@ function Admin() {
     URL.revokeObjectURL(a.href);
   };
   const tabBtn = (active: boolean) =>
-    (active ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-800') +
+    (active ? 'bg-white text-black' : 'bg-black text-neutral-200 border border-neutral-800') +
     ' flex-1 py-2.5 text-xs font-semibold uppercase tracking-[0.15em] transition';
 
   return (
@@ -1147,19 +1147,19 @@ function Admin() {
       <h1 className="text-2xl font-bold tracking-tight text-white">Staff</h1>
       <Card>
         <div className="grid grid-cols-3 text-center">
-          <div><div className="text-2xl font-light text-white">{list.length}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">iscrizioni</div></div>
-          <div><div className="text-2xl font-light text-white">{totAdulti + totBimbi}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">partecipanti</div></div>
-          <div><div className="text-2xl font-light text-white">{list.filter((p) => p.voucher_used).length}</div><div className="text-[10px] text-neutral-500 uppercase tracking-[0.2em] mt-1">colazioni</div></div>
+          <div><div className="text-2xl font-light text-white">{list.length}</div><div className="text-[11px] text-neutral-300 uppercase tracking-[0.2em] mt-1">iscrizioni</div></div>
+          <div><div className="text-2xl font-light text-white">{totAdulti + totBimbi}</div><div className="text-[11px] text-neutral-300 uppercase tracking-[0.2em] mt-1">partecipanti</div></div>
+          <div><div className="text-2xl font-light text-white">{list.filter((p) => p.voucher_used).length}</div><div className="text-[11px] text-neutral-300 uppercase tracking-[0.2em] mt-1">colazioni</div></div>
         </div>
       </Card>
 
       <Card>
         <div className="flex items-center justify-between mb-3">
-          <p className="text-neutral-500 text-xs font-light pr-3">
+          <p className="text-neutral-300 text-xs pr-3">
             Scanner automatico: primo passaggio = check-in{colAperta ? ', secondo = colazione (con conferma)' : ''}.
           </p>
           <button onClick={toggleColazione}
-            className={(colAperta ? 'bg-white text-black' : 'bg-black text-neutral-400 border border-neutral-700') + ' shrink-0 px-3 py-2 text-[10px] font-semibold uppercase tracking-[0.15em] transition'}>
+            className={(colAperta ? 'bg-white text-black' : 'bg-black text-neutral-200 border border-neutral-700') + ' shrink-0 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.15em] transition'}>
             {colAperta ? 'Colazione aperta' : 'Colazione chiusa'}
           </button>
         </div>
@@ -1167,7 +1167,7 @@ function Admin() {
         {pendingCol && (
           <div className="border border-neutral-700 p-4 my-3 text-center space-y-3">
             <p className="text-white font-semibold">{pendingCol.name}</p>
-            <p className="text-neutral-400 text-sm">
+            <p className="text-neutral-200 text-sm">
               Check-in già fatto · consegnare <span className="text-white">{pendingCol.adults + pendingCol.children} colazioni</span>
               {pendingCol.notes ? <> · <span className="text-white">{pendingCol.notes}</span></> : null}?
             </p>
@@ -1193,33 +1193,33 @@ function Admin() {
             Esporta CSV
           </button>
         </div>
-        {list.length === 0 && <p className="text-neutral-600 text-sm font-light">Nessuna iscrizione ancora.</p>}
+        {list.length === 0 && <p className="text-neutral-400 text-sm">Nessuna iscrizione ancora.</p>}
         {list.length > 0 && (
           <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cerca nome o contatto…"
-            className="w-full bg-black border border-neutral-800 px-3 py-2.5 text-sm text-white placeholder-neutral-600 focus:outline-none focus:border-white transition mb-2" />
+            className="w-full bg-black border border-neutral-800 px-3 py-2.5 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-white transition mb-2" />
         )}
         <ul className="divide-y divide-neutral-800 text-sm">
           {list.filter((p) => (p.name + ' ' + p.contact).toLowerCase().includes(query.toLowerCase())).map((p) => (
             <li key={p.id} className="py-3 flex justify-between items-center gap-3">
               <div className="min-w-0">
                 <div className="text-white truncate">{p.name}</div>
-                <div className="text-neutral-500 text-xs font-light truncate">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
+                <div className="text-neutral-300 text-xs truncate">{p.adults}A · {p.children}B{p.notes ? ' · ' + p.notes : ''}</div>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <button onClick={() => manual('in', p)} disabled={p.checked_in} title="Check-in manuale"
-                  className={(p.checked_in ? 'text-white border-neutral-800' : 'text-neutral-400 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
+                  className={(p.checked_in ? 'text-white border-neutral-800' : 'text-neutral-200 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[11px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
                   {p.checked_in ? '● in' : 'in'}
                 </button>
                 <button onClick={() => manual('col', p)} disabled={p.voucher_used} title="Colazione manuale"
-                  className={(p.voucher_used ? 'text-white border-neutral-800' : 'text-neutral-400 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[10px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
+                  className={(p.voucher_used ? 'text-white border-neutral-800' : 'text-neutral-200 border-neutral-700 hover:text-white hover:border-white') + ' border px-2 py-1 text-[11px] uppercase tracking-[0.1em] transition disabled:cursor-default'}>
                   {p.voucher_used ? '● col' : 'col'}
                 </button>
                 {(p.checked_in || p.voucher_used) && (
                   <button onClick={() => undo(p)} title="Annulla ultimo stato (errore)"
-                    className="text-neutral-600 hover:text-white border border-neutral-800 px-2 py-1 text-xs transition">↺</button>
+                    className="text-neutral-400 hover:text-white border border-neutral-800 px-2 py-1 text-xs transition">↺</button>
                 )}
                 <button onClick={() => cancel(p)} title="Annulla iscrizione"
-                  className="text-neutral-600 hover:text-red-400 border border-neutral-800 px-2 py-1 text-xs transition">✕</button>
+                  className="text-neutral-400 hover:text-red-400 border border-neutral-800 px-2 py-1 text-xs transition">✕</button>
               </div>
             </li>
           ))}
@@ -1232,9 +1232,9 @@ function Admin() {
 // ---------- Privacy ----------
 function Privacy({ go }: { go: (v: View) => void }) {
   return (
-    <div className="space-y-5 animate-fade-in-up pt-8 text-sm font-light text-neutral-300 leading-relaxed">
+    <div className="space-y-5 animate-fade-in-up pt-8 text-sm text-neutral-300 leading-relaxed">
       <h1 className="text-2xl font-bold tracking-tight text-white">Informativa privacy</h1>
-      <p className="text-neutral-500 text-xs uppercase tracking-[0.2em]">Ai sensi del Reg. UE 2016/679 (GDPR)</p>
+      <p className="text-neutral-300 text-xs uppercase tracking-[0.2em]">Ai sensi del Reg. UE 2016/679 (GDPR)</p>
       <Card><Label>Titolare del trattamento</Label>
         <p>APS San Martino 2.0 — The Valley, Vallata di Polinago (MO). Per esercitare i tuoi diritti contatta l'associazione tramite i canali dell'evento.</p></Card>
       <Card><Label>Dati raccolti e finalità</Label>
@@ -1277,8 +1277,8 @@ export default function App() {
         <div className="max-w-lg mx-auto flex">
           {nav.map((n) => (
             <button key={n.v} onClick={() => setView(n.v)}
-              className={'flex-1 py-4 text-center text-[10px] font-semibold uppercase tracking-[0.2em] transition ' +
-                (view === n.v ? 'text-white border-t-2 border-white -mt-px' : 'text-neutral-600')}>
+              className={'flex-1 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.2em] transition ' +
+                (view === n.v ? 'text-white border-t-2 border-white -mt-px' : 'text-neutral-400')}>
               {n.label}
             </button>
           ))}
