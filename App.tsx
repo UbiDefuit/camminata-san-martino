@@ -455,7 +455,9 @@ function Mappa() {
     const map = L.map('map', { zoomControl: false }).setView(TRACK[0], 14);
     map2dRef.current = map;
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
-    const line = L.polyline(TRACK, { color: '#ffffff', weight: 4, opacity: 0.9 }).addTo(map);
+    // doppia linea ad alto contrasto: bordo bianco + anima nera, leggibile su qualsiasi sfondo
+    L.polyline(TRACK, { color: '#ffffff', weight: 10, opacity: 0.95 }).addTo(map);
+    const line = L.polyline(TRACK, { color: '#111111', weight: 4.5, opacity: 1 }).addTo(map);
     POIS.forEach((poi) =>
       L.marker(poi.pos, {
         icon: L.divIcon({ html: '<div style="font-size:22px">' + poi.icon + '</div>', className: '', iconSize: [24, 24] }),
@@ -770,7 +772,7 @@ function Mappa() {
         <button onClick={() => { stopFly(); svHideNow(); setMode('3d'); }} className={tabBtn(mode === '3d')}>Vista 3D</button>
       </div>
       {mode === '2d'
-        ? <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-3 grayscale contrast-110" />
+        ? <div id="map" className="h-[50vh] overflow-hidden border border-neutral-800 mt-3 grayscale-[0.85] contrast-105" />
         : <div id="map3d" className="h-[55vh] overflow-hidden border border-neutral-800 mt-3" />}
       {svMounted && (
         <div className={'fixed inset-0 z-50 bg-black transition-opacity duration-1000 ' + (svOpaque ? 'opacity-100' : 'opacity-0 pointer-events-none')}>
