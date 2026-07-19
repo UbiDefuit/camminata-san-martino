@@ -1278,7 +1278,6 @@ export default function App() {
     { v: 'tagliandino', label: 'Ticket' },
     { v: 'mappa', label: 'Percorso' },
     { v: 'foto', label: 'Foto' },
-    { v: 'admin', label: 'Staff' },
   ];
 
   return (
@@ -1297,14 +1296,22 @@ export default function App() {
         {view === 'privacy' && <Privacy go={setView} />}
       </main>
       <nav className="fixed bottom-0 inset-x-0 bg-black/95 backdrop-blur border-t border-neutral-800">
-        <div className="max-w-lg mx-auto flex">
+        <div className="max-w-lg mx-auto flex items-stretch">
           {nav.map((n) => (
             <button key={n.v} onClick={() => setView(n.v)}
-              className={'flex-1 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.2em] transition ' +
+              className={'flex-1 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.15em] transition ' +
                 (view === n.v ? 'text-white border-t-2 border-white -mt-px' : 'text-neutral-400')}>
               {n.label}
             </button>
           ))}
+          <button onClick={() => setView('admin')} title="Area staff" aria-label="Area staff"
+            className={'w-12 shrink-0 py-4 flex items-center justify-center transition ' +
+              (view === 'admin' ? 'text-white border-t-2 border-white -mt-px' : 'text-neutral-400')}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="4" y="11" width="16" height="9" rx="1" />
+              <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+            </svg>
+          </button>
         </div>
       </nav>
     </div>
