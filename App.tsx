@@ -700,7 +700,7 @@ function Mappa() {
         ctx.fillText('SAN MARTINO 2.0 — INTO THE WILD', W / 2, H - 185);
         ctx.font = '300 27px Helvetica, Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillText('5,5 KM · +422 M' + (finMin ? ' · ' + formatMin(finMin) : ''), W / 2, H - 135);
+        ctx.fillText('6,2 KM · +383 M' + (finMin ? ' · ' + formatMin(finMin) : ''), W / 2, H - 135);
         ctx.fillStyle = '#fff'; ctx.fillRect(W / 2 - 40, H - 108, 80, 3);
         ctx.font = '300 21px Helvetica, Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
@@ -810,7 +810,7 @@ function Mappa() {
               <span className="text-[11px] uppercase tracking-[0.3em] text-neutral-200 mt-1">First Edition</span>
             </div>
             <p className="text-white text-3xl font-light mt-8 tabular-nums">{formatMin(finisherMin)}</p>
-            <p className="text-neutral-300 text-xs uppercase tracking-[0.25em] mt-2">Into the Wild · 5,5 km · +422 m</p>
+            <p className="text-neutral-300 text-xs uppercase tracking-[0.25em] mt-2">Into the Wild · 6,2 km · +383 m</p>
             <div className="mt-8 space-y-3 w-64 mx-auto">
               <button onClick={() => { setFinisherMin(null); setMode('3d'); }}
                 className="w-full bg-white text-black py-3.5 font-semibold uppercase tracking-[0.15em] text-xs">
