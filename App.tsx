@@ -173,6 +173,13 @@ function Landing({ go }: { go: (v: View) => void }) {
           Condividi il link
         </button>
       </Card>
+
+      <div className="text-center pt-4 pb-2">
+        <img src="./stemma-polinago.png" alt="Stemma del Comune di Polinago" className="w-16 mx-auto bg-white p-1.5" />
+        <p className="text-xs uppercase tracking-[0.25em] text-neutral-300 mt-3 leading-relaxed">
+          Con il patrocinio del<br />Comune di Polinago
+        </p>
+      </div>
     </div>
   );
 }
