@@ -53,3 +53,7 @@ html.light .accent-white { accent-color: #141414; }
 html.light .placeholder-neutral-500::placeholder { color: #8a8a8a; }
 /* eccezioni: QR e immagini su sfondo bianco restano bianchi */
 html.light img.bg-white { background-color: #ffffff !important; }
+
+/* ---- Wow mappa: corrente che scorre lungo il percorso ---- */
+@keyframes trailflow { to { stroke-dashoffset: -320; } }
+.trail-flow { animation: trailflow 9s linear infinite; }

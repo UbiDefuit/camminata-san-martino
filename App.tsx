@@ -456,15 +456,34 @@ function Mappa() {
     map2dRef.current = map;
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
     // doppia linea ad alto contrasto: bordo bianco + anima nera, leggibile su qualsiasi sfondo
-    L.polyline(TRACK, { color: '#ffffff', weight: 10, opacity: 0.95 }).addTo(map);
+    const casing = L.polyline(TRACK, { color: '#ffffff', weight: 10, opacity: 0.95 }).addTo(map);
     const line = L.polyline(TRACK, { color: '#111111', weight: 4.5, opacity: 1 }).addTo(map);
-    POIS.forEach((poi) =>
-      L.marker(poi.pos, {
-        icon: L.divIcon({ html: '<div style="font-size:22px">' + poi.icon + '</div>', className: '', iconSize: [24, 24] }),
-      }).addTo(map).bindPopup(poi.label)
-    );
     map.fitBounds(line.getBounds(), { padding: [30, 30] });
-    return () => { stopFly(); meRef.current = null; map2dRef.current = null; map.remove(); };
+
+    // il percorso si disegna da solo dalla partenza all'arrivo
+    [casing, line].forEach((pl) => {
+      const p = (pl as any)._path as SVGPathElement | undefined;
+      if (!p || !p.getTotalLength) return;
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = String(len);
+      p.style.strokeDashoffset = String(len);
+      p.getBoundingClientRect(); // forza il reflow
+      p.style.transition = 'stroke-dashoffset 3s ease-in-out 0.3s';
+      requestAnimationFrame(() => { p.style.strokeDashoffset = '0'; });
+      setTimeout(() => { p.style.strokeDasharray = ''; p.style.strokeDashoffset = ''; p.style.transition = ''; }, 3600);
+    });
+
+    // a disegno finito: POI e corrente che scorre in direzione di marcia
+    const late = setTimeout(() => {
+      L.polyline(TRACK, { color: '#ffffff', weight: 2.5, opacity: 0.9, dashArray: '2 14', className: 'trail-flow' }).addTo(map);
+      POIS.forEach((poi) =>
+        L.marker(poi.pos, {
+          icon: L.divIcon({ html: '<div style="font-size:22px" class="animate-fade-in-up">' + poi.icon + '</div>', className: '', iconSize: [24, 24] }),
+        }).addTo(map).bindPopup(poi.label)
+      );
+    }, 3300);
+    const clearLate = () => clearTimeout(late);
+    return () => { clearLate(); stopFly(); meRef.current = null; map2dRef.current = null; map.remove(); };
   }, [mode]);
 
   // Mappa 3D (MapLibre GL: satellite + terreno DEM)
