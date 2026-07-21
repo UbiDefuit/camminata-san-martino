@@ -112,6 +112,15 @@ function Landing({ go }: { go: (v: View) => void }) {
       </Card>
 
       <Card>
+        <Label>Il teaser</Label>
+        <video controls playsInline preload="metadata" poster="./teaser-poster.jpg"
+          className="w-full border border-neutral-800">
+          <source src="./teaser.mp4" type="video/mp4" />
+        </video>
+        <p className="text-neutral-300 text-xs mt-2 text-center">18 secondi per capire dove stiamo andando.</p>
+      </Card>
+
+      <Card>
         <Label>Programma</Label>
         <ul className="text-[15px] space-y-3">
           {[
