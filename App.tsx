@@ -84,8 +84,12 @@ function Landing({ go }: { go: (v: View) => void }) {
         <h1 className="text-4xl font-bold tracking-tight text-white leading-tight">San Martino 2.0</h1>
         <p className="text-2xl font-light tracking-[0.2em] uppercase text-neutral-300 mt-1">Into the Wild</p>
         <p className="text-neutral-300 mt-5 text-sm tracking-wide">
-          Chiesa di San Martino, Polinago<br />Sabato 1 agosto 2026 — ritrovo ore 6:30
+          Chiesa di San Martino · San Martino Vallata<br />Sabato 1 agosto 2026 — ritrovo ore 6:30
         </p>
+        <a href="https://maps.app.goo.gl/rUAuxyJMV4Pdbpb69" target="_blank" rel="noreferrer"
+          className="inline-block mt-4 text-xs uppercase tracking-[0.2em] text-neutral-200 underline underline-offset-4 hover:text-white transition">
+          📍 Apri il ritrovo in Google Maps
+        </a>
       </div>
 
       <Card>
@@ -734,7 +738,7 @@ function Mappa() {
         ctx.fillStyle = '#fff'; ctx.fillRect(W / 2 - 40, H - 108, 80, 3);
         ctx.font = '300 21px Helvetica, Arial, sans-serif';
         ctx.fillStyle = 'rgba(255,255,255,0.7)';
-        ctx.fillText('1 AGOSTO 2026 · POLINAGO', W / 2, H - 70);
+        ctx.fillText('1 AGOSTO 2026 · SAN MARTINO VALLATA', W / 2, H - 70);
       };
 
       const mapCanvas = map.getCanvas();
@@ -1280,7 +1284,7 @@ function Privacy({ go }: { go: (v: View) => void }) {
       <h1 className="text-2xl font-bold tracking-tight text-white">Informativa privacy</h1>
       <p className="text-neutral-300 text-xs uppercase tracking-[0.2em]">Ai sensi del Reg. UE 2016/679 (GDPR)</p>
       <Card><Label>Titolare del trattamento</Label>
-        <p>APS San Martino 2.0 — The Valley, Vallata di Polinago (MO). Per esercitare i tuoi diritti contatta l'associazione tramite i canali dell'evento.</p></Card>
+        <p>APS San Martino 2.0 — The Valley, San Martino Vallata, Polinago (MO). Per esercitare i tuoi diritti contatta l'associazione tramite i canali dell'evento.</p></Card>
       <Card><Label>Dati raccolti e finalità</Label>
         <p>Nome, contatto (email o telefono), numero di partecipanti ed eventuali note alimentari, raccolti al solo fine di gestire l'iscrizione all'evento "San Martino 2.0 — Into the Wild" del 1° agosto 2026, il check-in e la distribuzione della colazione.</p></Card>
       <Card><Label>Riprese foto e video</Label>
