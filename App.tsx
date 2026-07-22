@@ -15,6 +15,28 @@ import { isSupabaseConfigured } from './utils/supabase';
 
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'foto' | 'admin' | 'privacy';
 
+// Rete di sicurezza: se una vista va in crash, mostra l'errore invece del nero
+class Guardia extends React.Component<{ children: React.ReactNode }, { err: string | null }> {
+  state = { err: null as string | null };
+  static getDerivedStateFromError(e: any) { return { err: String(e?.message || e) }; }
+  componentDidCatch(e: any) { console.error('[crash]', e); }
+  render() {
+    if (this.state.err) {
+      return (
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8 space-y-4">
+          <p className="text-white font-semibold">Qualcosa è andato storto</p>
+          <p className="text-neutral-300 text-xs break-all">{this.state.err}</p>
+          <button onClick={() => this.setState({ err: null })}
+            className="border border-neutral-700 text-white px-6 py-3 text-xs uppercase tracking-[0.15em]">
+            Riprova
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 const EVENT_DATE = new Date('2026-08-01T07:00:00');
 // Link d'invito al gruppo WhatsApp dell'evento (da impostare quando il gruppo è creato)
 const WHATSAPP_LINK = 'https://chat.whatsapp.com/Irv0U5KNHroKef4iLJtWua';
@@ -1321,6 +1343,7 @@ export default function App() {
         {light ? '🌙' : '☀️'}
       </button>
       <main className="max-w-lg mx-auto px-5 pb-28">
+        <Guardia>
         {view === 'home' && <Landing go={setView} />}
         {view === 'iscrizione' && <Iscrizione go={setView} />}
         {view === 'tagliandino' && <Tagliandino />}
@@ -1328,6 +1351,7 @@ export default function App() {
         {view === 'foto' && <Foto />}
         {view === 'admin' && <Admin />}
         {view === 'privacy' && <Privacy go={setView} />}
+        </Guardia>
       </main>
       <nav className="fixed bottom-0 inset-x-0 bg-black/95 backdrop-blur border-t border-neutral-800">
         <div className="max-w-lg mx-auto flex items-stretch">
