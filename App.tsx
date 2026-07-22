@@ -1043,6 +1043,7 @@ function Admin() {
   const [msg, setMsg] = useState('');
   const [pendingCol, setPendingCol] = useState<Participant | null>(null);
   const [colAperta, setColAperta] = useState(false);
+  const [query, setQuery] = useState('');
   const lastSeen = useRef<Record<string, number>>({});
   const [pin, setPin] = useState(sessionStorage.getItem('sm2_staff_pin') || '');
   const [authed, setAuthed] = useState(!!sessionStorage.getItem('sm2_staff_pin'));
@@ -1146,8 +1147,6 @@ function Admin() {
     scannerRef.current = null;
     setScanning(false);
   };
-
-  const [query, setQuery] = useState('');
 
   // Piano B: check-in e colazione MANUALI dalla lista (per chi arriva senza QR)
   const manual = async (what: 'in' | 'col', p: Participant) => {
