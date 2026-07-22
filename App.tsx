@@ -16,8 +16,8 @@ import { isSupabaseConfigured } from './utils/supabase';
 type View = 'home' | 'iscrizione' | 'tagliandino' | 'mappa' | 'foto' | 'admin' | 'privacy';
 
 // Rete di sicurezza: se una vista va in crash, mostra l'errore invece del nero
-class Guardia extends React.Component<{ children: React.ReactNode }, { err: string | null }> {
-  state = { err: null as string | null };
+class Guardia extends (React.Component as any) {
+  state: { err: string | null } = { err: null };
   static getDerivedStateFromError(e: any) { return { err: String(e?.message || e) }; }
   componentDidCatch(e: any) { console.error('[crash]', e); }
   render() {
