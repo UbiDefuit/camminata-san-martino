@@ -73,14 +73,18 @@ function IscrizioniInfo() {
   if (!stats) return null;
   const left = Math.max(0, stats.cap - stats.taken);
   const closed = stats.deadline && new Date() > new Date(stats.deadline);
+  if (closed) return <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-300">Iscrizioni chiuse</p>;
+  if (left === 0) return <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-300">Posti esauriti</p>;
   return (
-    <p className="text-center text-xs uppercase tracking-[0.2em] text-neutral-300">
-      {closed
-        ? 'Iscrizioni chiuse'
-        : left === 0
-          ? 'Posti esauriti'
-          : <>Iscrizioni entro le 20:00 di giovedì 30 luglio · <span className="text-white">{left}</span> posti disponibili</>}
-    </p>
+    <div className="text-center space-y-1.5">
+      <p className="text-xs uppercase tracking-[0.2em] text-neutral-200">
+        {stats.taken > 0 && <><span className="text-white font-semibold">{stats.taken}</span> camminatori già iscritti · </>}
+        <span className="text-white font-semibold">{left}</span> posti disponibili
+      </p>
+      <p className="text-[11px] uppercase tracking-[0.2em] text-neutral-400">
+        Iscrizioni entro le 20:00 di giovedì 30 luglio
+      </p>
+    </div>
   );
 }
 
@@ -288,6 +292,7 @@ function Iscrizione({ go }: { go: (v: View) => void }) {
 function Tagliandino() {
   const [p, setP] = useState<Participant | null>(null);
   const [qr, setQr] = useState('');
+  const [sharing, setSharing] = useState(false);
 
   useEffect(() => {
     const id = getMyTicketId();
@@ -343,6 +348,55 @@ function Tagliandino() {
           )}
         </div>
       </Card>
+      <Button onClick={async () => {
+        if (!p || sharing) return;
+        setSharing(true);
+        try {
+          const W2 = 1080, H2 = 1920;
+          const cv = document.createElement('canvas'); cv.width = W2; cv.height = H2;
+          const c = cv.getContext('2d')!;
+          c.fillStyle = '#0a0a0a'; c.fillRect(0, 0, W2, H2);
+          c.strokeStyle = '#ffffff'; c.lineWidth = 12; c.lineJoin = 'round'; c.lineCap = 'round';
+          const m = [[315, 760], [495, 550], [593, 662], [683, 572], [840, 760]];
+          c.beginPath(); c.moveTo(m[0][0], m[0][1]);
+          for (let i = 1; i < m.length; i++) c.lineTo(m[i][0], m[i][1]);
+          c.stroke();
+          c.beginPath(); c.arc(705, 470, 39, 0, Math.PI * 2); c.stroke();
+          c.textAlign = 'center'; c.fillStyle = '#ffffff';
+          c.font = '600 44px Helvetica, Arial, sans-serif';
+          c.fillText('S A N   M A R T I N O   2 . 0', W2 / 2, 360);
+          const tot = p.adults + p.children;
+          c.font = 'bold 148px Helvetica, Arial, sans-serif';
+          c.fillText(tot > 1 ? 'CI SAREMO' : 'CI SARÒ', W2 / 2, 980);
+          c.font = 'bold 54px Helvetica, Arial, sans-serif';
+          c.fillText(p.name.toUpperCase(), W2 / 2, 1085);
+          if (tot > 1) {
+            c.font = '300 40px Helvetica, Arial, sans-serif'; c.fillStyle = '#bbbbbb';
+            c.fillText(tot + ' CAMMINATORI', W2 / 2, 1150);
+            c.fillStyle = '#ffffff';
+          }
+          c.fillStyle = '#ffffff'; c.fillRect(240, 1215, 600, 96);
+          c.fillStyle = '#0a0a0a'; c.font = 'bold 50px Helvetica, Arial, sans-serif';
+          c.fillText('INTO THE WILD', W2 / 2, 1280);
+          c.fillStyle = '#ffffff'; c.font = 'bold 42px Helvetica, Arial, sans-serif';
+          c.fillText('SABATO 1 AGOSTO · ORE 6:30', W2 / 2, 1405);
+          c.fillStyle = '#bbbbbb'; c.font = '300 34px Helvetica, Arial, sans-serif';
+          c.fillText('SAN MARTINO DI POLINAGO · 6,2 KM', W2 / 2, 1465);
+          const qrData = await QRCode.toDataURL(SITE_URL, { width: 240, margin: 1 });
+          const img = new Image(); img.src = qrData; await img.decode();
+          c.fillStyle = '#ffffff'; c.fillRect(W2 / 2 - 140, 1560, 280, 280);
+          c.drawImage(img, W2 / 2 - 120, 1580, 240, 240);
+          const blob: Blob = await new Promise((r) => cv.toBlob((b) => r(b!), 'image/png'));
+          const file = new File([blob], 'ci-saro-san-martino.png', { type: 'image/png' });
+          const nav: any = navigator;
+          if (nav.canShare && nav.canShare({ files: [file] })) {
+            try { await nav.share({ files: [file], title: 'San Martino 2.0 — Into the Wild' }); } catch { /* annullato */ }
+          } else {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = file.name; a.click();
+          }
+        } finally { setSharing(false); }
+      }} disabled={sharing}>{sharing ? 'Preparo la card…' : 'Condividi «Ci sarò»'}</Button>
       <p className="text-xs text-neutral-400 px-6">
         Mostra questo QR al volontario alla partenza (check-in) e al rientro alla chiesa (colazione).
         Funziona anche offline.
